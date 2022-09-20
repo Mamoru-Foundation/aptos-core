@@ -11,13 +11,13 @@ edition = "2021"
 
 [dependencies]
 move-binary-format = { path = "../../move-binary-format" }
-rand = "0.8.3"
 
 move-bytecode-verifier = { path = "../../move-bytecode-verifier" }
 move-core-types = { path = "../../move-core/types" }
 move-ir-to-bytecode = { path = "../../move-ir-compiler/move-ir-to-bytecode" }
 move-ir-types = { path = "../../move-ir/types" }
 move-symbol-pool = { path = "../../move-symbol-pool" }
+rand = "0.8.3"
 
 [features]
 default = []

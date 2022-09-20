@@ -458,6 +458,10 @@ where
     ) -> PartialVMResult<()> {
         Ok(())
     }
+
+    fn charged_already_total(&self) -> Option<InternalGas> {
+        Some(self.algebra.io_gas_used() + self.algebra.execution_gas_used())
+    }
 }
 
 impl<A> AptosGasMeter for StandardGasMeter<A>

@@ -24,6 +24,7 @@ Ok(
             status: Keep(
                 Success,
             ),
+            call_traces: [],
         },
     ],
 )
@@ -53,6 +54,7 @@ Ok(
                     ),
                 ),
             ),
+            call_traces: [],
         },
     ],
 )

@@ -17,7 +17,11 @@ use move_binary_format::{
 use move_core_types::{
     account_address::AccountAddress,
     gas_algebra::{NumArgs, NumBytes},
-    language_storage::TypeTag,
+    identifier::Identifier,
+    language_storage::{ModuleId, TypeTag},
+    trace::{CallTrace, CallType},
+    u256::U256,
+    value::MoveValue,
     vm_status::{StatusCode, StatusType},
 };
 use move_vm_types::{
@@ -25,12 +29,19 @@ use move_vm_types::{
     loaded_data::runtime_types::Type,
     natives::function::NativeResult,
     values::{
-        self, GlobalValue, IntegerValue, Locals, Reference, Struct, StructRef, VMValueCast, Value,
-        Vector, VectorRef,
+        self, Container, ContainerId, GlobalValue, IntegerValue, Locals, Reference, Struct,
+        StructRef, VMValueCast, Value, ValueImpl, Vector, VectorRef,
     },
     views::TypeView,
 };
-use std::{cmp::min, collections::VecDeque, fmt::Write, sync::Arc};
+use std::{
+    cmp::min,
+    collections::{HashMap, VecDeque},
+    fmt::Write,
+    mem,
+    sync::Arc,
+};
+use tracing::error;
 
 macro_rules! debug_write {
     ($($toks: tt)*) => {
@@ -57,6 +68,55 @@ macro_rules! set_err_info {
     }};
 }
 
+type MoveValueCache = HashMap<ContainerId, Arc<MoveValue>>;
+
+struct TraceCollectorConfig {
+    max_argument_size_bytes: u64,
+    any_argument_size_modules: Vec<ModuleId>,
+}
+
+impl TraceCollectorConfig {
+    fn load() -> Self {
+        let max_argument_size_bytes = std::env::var("MAMORU_MOVE_TRACE_MAX_ARG_SIZE_BYTES")
+            .ok()
+            .map(|s| s.parse::<u64>().expect("Invalid max argument size"))
+            .unwrap_or(1024);
+
+        let any_argument_size_modules = std::env::var("MAMORU_MOVE_TRACE_ANY_ARG_SIZE_MODULES")
+            .ok()
+            .map(|s| {
+                s.split_whitespace()
+                    .map(String::from)
+                    .collect::<Vec<String>>()
+            })
+            .unwrap_or_default()
+            .into_iter()
+            .map(|module_name| {
+                let module_parts: Vec<_> = module_name.split("::").collect();
+
+                if module_parts.len() != 2 {
+                    panic!("Invalid module name: {}, expected 0x0::name", module_name);
+                }
+
+                let address = AccountAddress::from_hex_literal(module_parts[0])
+                    .expect("Invalid module address");
+
+                ModuleId::new(
+                    address,
+                    Identifier::new(module_parts[1]).expect("Invalid module name"),
+                )
+            })
+            .collect();
+
+        Self {
+            max_argument_size_bytes,
+            any_argument_size_modules,
+        }
+    }
+}
+
+const TOO_BIG_ARG_MAGIC_NUMBER: u64 = 666999333;
+
 /// `Interpreter` instances can execute Move functions.
 ///
 /// An `Interpreter` instance is a stand alone execution context for a function.
@@ -68,6 +128,16 @@ pub(crate) struct Interpreter {
     call_stack: CallStack,
     /// Whether to perform a paranoid type safety checks at runtime.
     paranoid_type_checks: bool,
+    /// List of captured call traces
+    call_traces: Vec<CallTrace>,
+    values_cache: MoveValueCache,
+    trace_collector_config: TraceCollectorConfig,
+    argument_size_unlimited_at_depth: Option<u32>,
+}
+
+pub(crate) struct InterpreterEntrypointResult {
+    pub values: Vec<Value>,
+    pub call_traces: Vec<CallTrace>,
 }
 
 struct TypeWithLoader<'a, 'b> {
@@ -92,15 +162,27 @@ impl Interpreter {
         gas_meter: &mut impl GasMeter,
         extensions: &mut NativeContextExtensions,
         loader: &Loader,
-    ) -> VMResult<Vec<Value>> {
-        Interpreter {
+    ) -> VMResult<InterpreterEntrypointResult> {
+        let trace_collector_config = TraceCollectorConfig::load();
+
+        let mut interp = Interpreter {
             operand_stack: Stack::new(),
             call_stack: CallStack::new(),
             paranoid_type_checks: loader.vm_config().paranoid_type_checks,
-        }
-        .execute_main(
+            call_traces: Vec::new(),
+            values_cache: HashMap::new(),
+            trace_collector_config,
+            argument_size_unlimited_at_depth: None,
+        };
+
+        let values = interp.execute_main(
             loader, data_store, gas_meter, extensions, function, ty_args, args,
-        )
+        )?;
+
+        Ok(InterpreterEntrypointResult {
+            values,
+            call_traces: interp.call_traces,
+        })
     }
 
     /// Main loop for the execution of a function.
@@ -110,7 +192,7 @@ impl Interpreter {
     /// on call. When that happens the frame is changes to a new one (call) or to the one
     /// at the top of the stack (return). If the call stack is empty execution is completed.
     fn execute_main(
-        mut self,
+        &mut self,
         loader: &Loader,
         data_store: &mut TransactionDataCache,
         gas_meter: &mut impl GasMeter,
@@ -133,14 +215,36 @@ impl Interpreter {
         }
 
         let mut current_frame = self
-            .make_new_frame(loader, function, ty_args, locals)
+            .make_new_frame(loader, function, ty_args, locals, 1)
             .map_err(|err| self.set_location(err))?;
+
+        let mut gas_used_before_call = gas_meter.charged_already_total().unwrap();
+
         loop {
             let resolver = current_frame.resolver(loader);
-            let exit_code =
-                current_frame //self
-                    .execute_code(&resolver, &mut self, data_store, gas_meter)
-                    .map_err(|err| self.maybe_core_dump(err, &current_frame))?;
+            let execution_result = current_frame
+                .execute_code(&resolver, self, data_store, gas_meter)
+                .map_err(|err| self.maybe_core_dump(err, &current_frame));
+
+            let gas_used_after_call = gas_meter.charged_already_total().unwrap();
+
+            let exit_code = {
+                let call_trace = &mut self.call_traces[current_frame.call_trace_idx];
+
+                call_trace.gas_used += gas_used_after_call
+                    .checked_sub(gas_used_before_call)
+                    .unwrap()
+                    .value();
+
+                execution_result.map_err(|err| {
+                    call_trace.err = Some(err.clone().into_vm_status());
+
+                    err
+                })?
+            };
+
+            gas_used_before_call = gas_used_after_call;
+
             match exit_code {
                 ExitCode::Return => {
                     let non_ref_vals = current_frame
@@ -152,7 +256,21 @@ impl Interpreter {
                     // TODO: Check if the error location is set correctly.
                     gas_meter
                         .charge_drop_frame(non_ref_vals.iter())
-                        .map_err(|e| self.set_location(e))?;
+                        .map_err(|e| {
+                            let err = self.set_location(e);
+
+                            let gas_used_after_call = gas_meter.charged_already_total().unwrap();
+
+                            let call_trace = &mut self.call_traces[current_frame.call_trace_idx];
+
+                            call_trace.err = Some(err.clone().into_vm_status());
+                            call_trace.gas_used += gas_used_after_call
+                                .checked_sub(gas_used_before_call)
+                                .unwrap()
+                                .value();
+
+                            err
+                        })?;
 
                     if let Some(frame) = self.call_stack.pop() {
                         // Note: the caller will find the callee's return values at the top of the shared operand stack
@@ -160,7 +278,7 @@ impl Interpreter {
                         current_frame.pc += 1; // advance past the Call instruction in the caller
                     } else {
                         // end of execution. `self` should no longer be used afterward
-                        return Ok(self.operand_stack.value);
+                        return Ok(mem::take(&mut self.operand_stack.value));
                     }
                 },
                 ExitCode::Call(fh_idx) => {
@@ -207,6 +325,7 @@ impl Interpreter {
                         .make_call_frame(loader, func, vec![])
                         .map_err(|e| self.set_location(e))
                         .map_err(|err| self.maybe_core_dump(err, &current_frame))?;
+
                     self.call_stack.push(current_frame).map_err(|frame| {
                         let err = PartialVMError::new(StatusCode::CALL_STACK_OVERFLOW);
                         let err = set_err_info!(frame, err);
@@ -259,6 +378,7 @@ impl Interpreter {
                         .make_call_frame(loader, func, ty_args)
                         .map_err(|e| self.set_location(e))
                         .map_err(|err| self.maybe_core_dump(err, &current_frame))?;
+
                     self.call_stack.push(current_frame).map_err(|frame| {
                         let err = PartialVMError::new(StatusCode::CALL_STACK_OVERFLOW);
                         let err = set_err_info!(frame, err);
@@ -306,18 +426,26 @@ impl Interpreter {
                 }
             }
         }
-        self.make_new_frame(loader, func, ty_args, locals)
+
+        self.make_new_frame(
+            loader,
+            func,
+            ty_args,
+            locals,
+            self.call_stack.len() as u32 + 2,
+        )
     }
 
     /// Create a new `Frame` given a `Function` and the function `Locals`.
     ///
     /// The locals must be loaded before calling this.
     fn make_new_frame(
-        &self,
+        &mut self,
         loader: &Loader,
         function: Arc<Function>,
         ty_args: Vec<Type>,
         locals: Locals,
+        depth: u32,
     ) -> PartialVMResult<Frame> {
         let local_tys = if self.paranoid_type_checks {
             if ty_args.is_empty() {
@@ -333,12 +461,60 @@ impl Interpreter {
         } else {
             vec![]
         };
+
+        let must_record_large_args = function
+            .module_id()
+            .map(|module_id| {
+                if let Some(argument_size_unlimited_at_depth) =
+                    self.argument_size_unlimited_at_depth
+                {
+                    return if depth >= argument_size_unlimited_at_depth {
+                        // If we are at or deeper than the depth at which we started recording large arguments,
+                        // It means we are in a downstream module, so we should continue recording large arguments
+                        true
+                    } else {
+                        // Otherwise, if there was a depth at which we started recording large arguments,
+                        // we should stop recording large arguments
+                        self.argument_size_unlimited_at_depth = None;
+
+                        false
+                    };
+                }
+
+                let is_any_arg_size_module_enter = self
+                    .trace_collector_config
+                    .any_argument_size_modules
+                    .contains(module_id);
+
+                if is_any_arg_size_module_enter {
+                    self.argument_size_unlimited_at_depth = Some(depth);
+
+                    return true;
+                }
+
+                false
+            })
+            .unwrap_or(false);
+
+        let call_info_idx = self.call_traces.len();
+        self.call_traces.push(new_call_trace(
+            function.clone(),
+            ty_args.clone(),
+            &locals,
+            depth,
+            loader,
+            &mut self.values_cache,
+            must_record_large_args,
+            self.trace_collector_config.max_argument_size_bytes,
+        ));
+
         Ok(Frame {
             pc: 0,
             locals,
             function,
             ty_args,
             local_tys,
+            call_trace_idx: call_info_idx,
         })
     }
 
@@ -876,6 +1052,50 @@ impl Interpreter {
     }
 }
 
+fn value_impl_size(value: &ValueImpl) -> usize {
+    let heap_value_size = match value {
+        ValueImpl::U8(_)
+        | ValueImpl::U16(_)
+        | ValueImpl::U32(_)
+        | ValueImpl::U64(_)
+        | ValueImpl::U128(_)
+        | ValueImpl::U256(_) => 0,
+        ValueImpl::Invalid => 0,
+        ValueImpl::Bool(_) => 0,
+        ValueImpl::Address(_) => 0,
+        ValueImpl::Container(value) => value_container_size(value),
+        ValueImpl::ContainerRef(value) => {
+            // Getting the underlying size, as we are going to use it anyway
+            value_container_size(value.container())
+        },
+        ValueImpl::IndexedRef(value) => {
+            let read = value.copy_by_ref();
+
+            value_impl_size(&read.0)
+        },
+    };
+
+    heap_value_size + mem::size_of::<ValueImpl>()
+}
+
+fn value_container_size(container: &Container) -> usize {
+    let heap_value_size = match container {
+        Container::Locals(a) | Container::Vec(a) | Container::Struct(a) => {
+            a.borrow().iter().map(value_impl_size).sum()
+        },
+        Container::VecU8(v) => v.borrow().len() * mem::size_of::<u8>(),
+        Container::VecU16(v) => v.borrow().len() * mem::size_of::<u16>(),
+        Container::VecU32(v) => v.borrow().len() * mem::size_of::<u32>(),
+        Container::VecU64(v) => v.borrow().len() * mem::size_of::<u64>(),
+        Container::VecU128(v) => v.borrow().len() * mem::size_of::<u128>(),
+        Container::VecU256(v) => v.borrow().len() * mem::size_of::<U256>(),
+        Container::VecBool(v) => v.borrow().len() * mem::size_of::<bool>(),
+        Container::VecAddress(v) => v.borrow().len() * mem::size_of::<AccountAddress>(),
+    };
+
+    heap_value_size + mem::size_of::<Container>()
+}
+
 // TODO Determine stack size limits based on gas limit
 const OPERAND_STACK_SIZE_LIMIT: usize = 1024;
 const CALL_STACK_SIZE_LIMIT: usize = 1024;
@@ -1011,6 +1231,10 @@ impl CallStack {
         let location_opt = self.0.last().map(|frame| frame.location());
         location_opt.unwrap_or(Location::Undefined)
     }
+
+    fn len(&self) -> usize {
+        self.0.len()
+    }
 }
 
 fn check_depth_of_type(resolver: &Resolver, ty: &Type) -> PartialVMResult<()> {
@@ -1094,6 +1318,127 @@ struct Frame {
     function: Arc<Function>,
     ty_args: Vec<Type>,
     local_tys: Vec<Type>,
+    call_trace_idx: usize,
+}
+
+fn new_call_trace(
+    function: Arc<Function>,
+    ty_args: Vec<Type>,
+    locals: &Locals,
+    depth: u32,
+    loader: &Loader,
+    values_cache: &mut MoveValueCache,
+    must_record_large_args: bool,
+    max_argument_size_bytes: u64,
+) -> CallTrace {
+    let args = function
+        .parameter_types()
+        .iter()
+        .enumerate()
+        .map(|(idx, ty)| {
+            let ty = if ty_args.is_empty() {
+                ty.clone()
+            } else {
+                ty.subst(&ty_args)?
+            };
+
+            let (ty, is_mut_ref) = match ty {
+                // Try find reference in some rc cache if found
+                Type::Reference(ty) => (*ty, false),
+                Type::MutableReference(ty) => (*ty, true),
+                _ => (ty, false),
+            };
+
+            let ty_layout = loader.type_to_fully_annotated_layout(&ty)?;
+            let value = locals.copy_loc(idx)?;
+
+            let move_value = if !must_record_large_args
+                && value_impl_size(&value.0) >= max_argument_size_bytes as usize
+            {
+                Arc::new(MoveValue::U64(TOO_BIG_ARG_MAGIC_NUMBER))
+            } else {
+                match &value.0 {
+                    // caches references serialization to avoid the same job when the value is not changed, but only read
+                    ValueImpl::ContainerRef(r) => {
+                        let key = r.container().id();
+
+                        // the container is global: `is_dirty` means the container was possibly modified
+                        if let Some(is_dirty) = r.is_dirty() {
+                            if is_dirty {
+                                values_cache.remove(&key);
+                            }
+                        }
+
+                        let move_value = if let Some(value) = values_cache.get(&key) {
+                            Arc::clone(value)
+                        } else {
+                            let move_value = Arc::new(value.try_as_move_value(&ty_layout)?);
+                            values_cache.insert(key, Arc::clone(&move_value));
+
+                            move_value
+                        };
+
+                        // the container is local and passed by the mutable reference
+                        // so may be changed in the NEXT frame
+                        if is_mut_ref {
+                            values_cache.remove(&key);
+                        }
+
+                        move_value
+                    },
+                    _ => Arc::new(value.try_as_move_value(&ty_layout)?),
+                }
+            };
+
+            PartialVMResult::Ok(move_value)
+        })
+        .filter_map(|result| match result {
+            Ok(value) => Some(value),
+            Err(err) => {
+                error!(
+                    error = ?err,
+                    function = %function.pretty_string(),
+                    "Failed to extract function argument",
+                );
+
+                None
+            },
+        })
+        .collect();
+
+    let ty_args: Vec<_> = ty_args
+        .iter()
+        .filter_map(|ty| match loader.type_to_type_tag(ty) {
+            Ok(ty) => Some(ty),
+            Err(err) => {
+                error!(
+                    error = ?err,
+                    ?ty,
+                    function = %function.pretty_string(),
+                    "Failed to extract type argument",
+                );
+
+                None
+            },
+        })
+        .collect();
+
+    let call_type = if ty_args.is_empty() {
+        CallType::Call
+    } else {
+        CallType::CallGeneric
+    };
+
+    CallTrace {
+        depth,
+        call_type,
+        module_id: function.module_id().cloned(),
+        function: function.name_ident(),
+        ty_args,
+        args,
+        gas_used: 0,
+        err: None,
+    }
 }
 
 /// An `ExitCode` from `execute_code_unit`.
@@ -2392,5 +2737,28 @@ impl Frame {
             None => Location::Script,
             Some(id) => Location::Module(id.clone()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn struct_value_impl_size() {
+        let s = Value::struct_(Struct::pack(vec![
+            Value::u64(1),
+            Value::u64(1),
+            Value::u64(1),
+            Value::u64(1),
+            Value::u64(1),
+            Value::u64(1),
+        ]));
+
+        assert_eq!(value_impl_size(&s.0), 360);
+
+        let s = Value::struct_(Struct::pack(vec![Value::u64(1)]));
+
+        assert_eq!(value_impl_size(&s.0), 120);
     }
 }

@@ -19,9 +19,9 @@ aptos-crypto = { workspace = true }
 aptos-framework = { workspace = true }
 aptos-logger = { workspace = true }
 aptos-openapi = { workspace = true }
-aptos-storage-interface = { workspace = true }
+aptos-storage-interface = { workspace = true, optional = true }
 aptos-types = { workspace = true }
-aptos-vm = { workspace = true }
+aptos-vm = { workspace = true, optional = true }
 async-trait = { workspace = true }
 bcs = { workspace = true }
 hex = { workspace = true }
@@ -35,3 +35,16 @@ poem-openapi = { workspace = true }
 poem-openapi-derive = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+[features]
+default = [
+  "convert",
+  "bytecode",
+]
+convert = [
+  "aptos-storage-interface",
+  "aptos-vm",
+]
+bytecode = [
+  "aptos-vm",
+]

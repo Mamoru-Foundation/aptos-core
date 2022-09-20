@@ -129,3 +129,5 @@ run_*
 # test files for indexer GRPC
 test_indexer_grpc_*.yaml
 test_indexer_grpc/*
+
+./fullnode.yaml

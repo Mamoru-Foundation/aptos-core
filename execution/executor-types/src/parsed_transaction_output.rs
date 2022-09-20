@@ -9,11 +9,13 @@ use aptos_types::{
     write_set::WriteSet,
 };
 use itertools::zip_eq;
+use move_core_types::trace::CallTrace;
 use once_cell::sync::Lazy;
 use std::ops::Deref;
 
 pub static NEW_EPOCH_EVENT_KEY: Lazy<EventKey> = Lazy::new(on_chain_config::new_epoch_event_key);
 
+#[derive(Clone)]
 pub struct ParsedTransactionOutput {
     output: TransactionOutput,
     reconfig_events: Vec<ContractEvent>,
@@ -66,14 +68,23 @@ impl ParsedTransactionOutput {
         Vec<ContractEvent>,
         u64,
         TransactionStatus,
+        Vec<CallTrace>,
     ) {
         let Self {
             output,
             reconfig_events,
         } = self;
-        let (write_set, events, gas_used, status) = output.unpack();
 
-        (write_set, events, reconfig_events, gas_used, status)
+        let (write_set, events, gas_used, status, call_traces) = output.unpack();
+
+        (
+            write_set,
+            events,
+            reconfig_events,
+            gas_used,
+            status,
+            call_traces,
+        )
     }
 }
 

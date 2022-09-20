@@ -229,6 +229,7 @@ impl DbReader for AptosDB {
                         events,
                         txn_info.gas_used(),
                         txn_info.status().clone().into(),
+                        vec![],
                     );
                     Ok((txn_info, (txn, txn_output)))
                 })

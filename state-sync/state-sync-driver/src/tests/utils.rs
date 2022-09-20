@@ -255,6 +255,7 @@ pub fn create_transaction_output() -> TransactionOutput {
         vec![create_event(None)],
         0,
         TransactionStatus::Keep(ExecutionStatus::Success),
+        vec![],
     )
 }
 

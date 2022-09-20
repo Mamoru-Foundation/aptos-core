@@ -1,0 +1,22 @@
+[package]
+name = "mamoru-aptos-sniffer"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aptos-crypto = { workspace = true }
+aptos-executor-types = { workspace = true }
+aptos-types = { workspace = true }
+fastcrypto = "0.1.4"
+itertools = { workspace = true }
+mamoru-aptos-types = { git = "https://github.com/Mamoru-Foundation/mamoru-core", rev = "bf805159f65611ce4d6137025c0ad826ace2ea68" }
+#mamoru-aptos-types = { path = "../../../mamoru-core/mamoru-aptos-types" }
+
+mamoru-sniffer = { git = "https://github.com/Mamoru-Foundation/mamoru-core", rev = "bf805159f65611ce4d6137025c0ad826ace2ea68" }
+#mamoru-sniffer = { path = "../../../mamoru-core/mamoru-sniffer" }
+
+move-core-types = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

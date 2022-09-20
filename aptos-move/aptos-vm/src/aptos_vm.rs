@@ -81,6 +81,7 @@ use move_core_types::{
     identifier::Identifier,
     language_storage::{ModuleId, TypeTag},
     move_resource::MoveStructType,
+    trace::CallTrace,
     transaction_argument::convert_txn_args,
     value::{serialize_values, MoveValue},
     vm_status::StatusType,
@@ -97,6 +98,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
+    time::Instant,
 };
 
 static EXECUTION_CONCURRENCY_LEVEL: OnceCell<usize> = OnceCell::new();
@@ -119,6 +121,7 @@ pub static RAYON_EXEC_POOL: Lazy<Arc<rayon::ThreadPool>> = Lazy::new(|| {
 
 /// Remove this once the bundle is removed from the code.
 static MODULE_BUNDLE_DISALLOWED: AtomicBool = AtomicBool::new(true);
+
 pub fn allow_module_bundle_for_test() {
     MODULE_BUNDLE_DISALLOWED.store(false, Ordering::Relaxed);
 }
@@ -140,12 +143,14 @@ fn get_transaction_output(
     fee_statement: FeeStatement,
     status: ExecutionStatus,
     change_set_configs: &ChangeSetConfigs,
+    call_traces: Vec<CallTrace>,
 ) -> Result<VMOutput, VMStatus> {
     let change_set = session.finish(change_set_configs)?;
     Ok(VMOutput::new(
         change_set,
         fee_statement,
         TransactionStatus::Keep(status),
+        call_traces,
     ))
 }
 
@@ -433,9 +438,12 @@ impl AptosVM {
                     log_context,
                     change_set_configs,
                 ) {
-                    Ok((change_set, fee_statement, status)) => {
-                        VMOutput::new(change_set, fee_statement, TransactionStatus::Keep(status))
-                    },
+                    Ok((change_set, fee_statement, status)) => VMOutput::new(
+                        change_set,
+                        fee_statement,
+                        TransactionStatus::Keep(status),
+                        vec![],
+                    ),
                     Err(err) => discarded_output(err.status_code()),
                 };
                 (error_code, txn_output)
@@ -590,6 +598,7 @@ impl AptosVM {
         txn_data: &TransactionMetadata,
         log_context: &AdapterLogSchema,
         change_set_configs: &ChangeSetConfigs,
+        call_traces: Vec<CallTrace>,
     ) -> Result<(VMStatus, VMOutput), VMStatus> {
         if self.gas_feature_version >= 12 {
             // Check if the gas meter's internal counters are consistent.
@@ -626,6 +635,7 @@ impl AptosVM {
             change_set,
             fee_statement,
             TransactionStatus::Keep(ExecutionStatus::Success),
+            call_traces,
         );
 
         Ok((VMStatus::Executed, output))
@@ -683,7 +693,7 @@ impl AptosVM {
         {
             gas_meter.charge_intrinsic_gas_for_transaction(txn_data.transaction_size())?;
 
-            match payload {
+            let SerializedReturnValues { call_traces, .. } = match payload {
                 TransactionPayload::Script(script) => {
                     let loaded_func =
                         session.load_script(script.code(), script.ty_args().to_vec())?;
@@ -701,21 +711,21 @@ impl AptosVM {
                             &loaded_func,
                             self.features.is_enabled(FeatureFlag::STRUCT_CONSTRUCTORS),
                         )?;
+
                     session.execute_script(
                         script.code(),
                         script.ty_args().to_vec(),
                         args,
                         gas_meter,
-                    )?;
+                    )?
                 },
-                TransactionPayload::EntryFunction(script_fn) => {
-                    self.validate_and_execute_entry_function(
+                TransactionPayload::EntryFunction(script_fn) => self
+                    .validate_and_execute_entry_function(
                         &mut session,
                         gas_meter,
                         txn_data.senders(),
                         script_fn,
-                    )?;
-                },
+                    )?,
 
                 // Not reachable as this function should only be invoked for entry or script
                 // transaction payload.
@@ -744,6 +754,7 @@ impl AptosVM {
                 txn_data,
                 log_context,
                 change_set_configs,
+                call_traces,
             )
         }
     }
@@ -828,6 +839,7 @@ impl AptosVM {
                                 txn_data,
                                 log_context,
                                 change_set_configs,
+                                vec![],
                             )
                         })
                     },
@@ -875,9 +887,13 @@ impl AptosVM {
             // Default to empty bytes if payload is not provided.
             bcs::to_bytes::<Vec<u8>>(&vec![]).map_err(|_| invariant_violation_error())?
         };
-        // Failures here will be propagated back.
-        let payload_bytes: Vec<Vec<u8>> = session
-            .execute_function_bypass_visibility(
+
+        let (payload_bytes, call_traces): (Vec<Vec<u8>>, Vec<CallTrace>) = {
+            let SerializedReturnValues {
+                return_values,
+                call_traces,
+                ..
+            } = session.execute_function_bypass_visibility(
                 &MULTISIG_ACCOUNT_MODULE,
                 GET_NEXT_TRANSACTION_PAYLOAD,
                 vec![],
@@ -886,11 +902,17 @@ impl AptosVM {
                     MoveValue::vector_u8(provided_payload),
                 ]),
                 gas_meter,
-            )?
-            .return_values
-            .into_iter()
-            .map(|(bytes, _ty)| bytes)
-            .collect::<Vec<_>>();
+            )?;
+
+            let return_values = return_values
+                .into_iter()
+                .map(|(bytes, _ty)| bytes)
+                .collect::<Vec<_>>();
+
+            (return_values, call_traces)
+        };
+
+        // Failures here will be propagated back.
         let payload_bytes = payload_bytes
             .first()
             // We expect the payload to either exists on chain or be passed along with the
@@ -969,6 +991,7 @@ impl AptosVM {
             txn_data,
             log_context,
             change_set_configs,
+            call_traces,
         )
     }
 
@@ -1158,7 +1181,7 @@ impl AptosVM {
                 },
                 Err(_err) => {
                     return Err(PartialVMError::new(StatusCode::CODE_DESERIALIZATION_ERROR)
-                        .finish(Location::Undefined))
+                        .finish(Location::Undefined));
                 },
             }
         }
@@ -1229,6 +1252,7 @@ impl AptosVM {
             txn_data,
             log_context,
             change_set_configs,
+            vec![],
         )
     }
 
@@ -1740,7 +1764,12 @@ impl AptosVM {
 
         SYSTEM_TRANSACTIONS_EXECUTED.inc();
 
-        let output = VMOutput::new(change_set, FeeStatement::zero(), VMStatus::Executed.into());
+        let output = VMOutput::new(
+            change_set,
+            FeeStatement::zero(),
+            VMStatus::Executed.into(),
+            vec![],
+        );
         Ok((VMStatus::Executed, output))
     }
 
@@ -1782,6 +1811,7 @@ impl AptosVM {
             FeeStatement::zero(),
             ExecutionStatus::Success,
             &get_or_vm_startup_failure(&self.storage_gas_params, log_context)?.change_set_configs,
+            vec![], // no call traces for block prologue
         )?;
         Ok((VMStatus::Executed, output))
     }
@@ -2095,6 +2125,7 @@ impl VMExecutor for AptosVM {
             ))
         });
         let log_context = AdapterLogSchema::new(state_view.id(), 0);
+        let before = Instant::now();
         info!(
             log_context,
             "Executing block, transaction count: {}",
@@ -2121,6 +2152,14 @@ impl VMExecutor for AptosVM {
             // Record the histogram count for transactions per block.
             BLOCK_TRANSACTION_COUNT.observe(count as f64);
         }
+
+        info!(
+            log_context,
+            "Finished block, transaction count: {}, elapsed_ms: {}",
+            count,
+            before.elapsed().as_millis(),
+        );
+
         ret
     }
 

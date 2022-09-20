@@ -263,6 +263,7 @@ pub(crate) fn build_vm_output(
             .build(),
         FeeStatement::new(GAS_USED, GAS_USED, 0, 0, 0),
         STATUS,
+        vec![],
     )
 }
 

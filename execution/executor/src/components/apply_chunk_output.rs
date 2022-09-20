@@ -250,6 +250,7 @@ impl ApplyChunkOutput {
                     Vec::new(),
                     0,
                     TransactionStatus::Keep(ExecutionStatus::Success),
+                    vec![],
                 ));
             to_keep.push((state_checkpoint_txn, state_checkpoint_txn_output));
         }
@@ -327,7 +328,7 @@ impl ApplyChunkOutput {
             state_updates_vec,
             hashes_vec
         ) {
-            let (write_set, events, per_txn_reconfig_events, gas_used, status) =
+            let (write_set, events, per_txn_reconfig_events, gas_used, status, call_traces) =
                 txn_output.unpack();
 
             let txn_info = match &status {
@@ -350,6 +351,7 @@ impl ApplyChunkOutput {
                 write_set,
                 events,
                 !per_txn_reconfig_events.is_empty(),
+                call_traces,
             );
             all_reconfig_events.extend(per_txn_reconfig_events);
             to_commit.push(txn_to_commit);

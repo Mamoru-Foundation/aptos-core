@@ -2,15 +2,16 @@
 // Parts of the project are originally copyright © Meta Platforms, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{Address, Bytecode, IdentifierWrapper, VerifyInput, VerifyInputWithRecursion};
+#[cfg(feature = "bytecode")]
+use crate::Bytecode;
+use crate::{Address, IdentifierWrapper, VerifyInput, VerifyInputWithRecursion};
 use anyhow::{bail, format_err};
 use aptos_types::{account_config::CORE_CODE_ADDRESS, event::EventKey, transaction::Module};
-use move_binary_format::{
-    access::ModuleAccess,
-    file_format::{
-        Ability, AbilitySet, CompiledModule, CompiledScript, StructTypeParameter, Visibility,
-    },
-};
+#[cfg(feature = "bytecode")]
+use move_binary_format::access::ModuleAccess;
+use move_binary_format::file_format::{Ability, AbilitySet, StructTypeParameter, Visibility};
+#[cfg(feature = "bytecode")]
+use move_binary_format::file_format::{CompiledModule, CompiledScript};
 use move_core_types::{
     account_address::AccountAddress,
     identifier::Identifier,
@@ -742,6 +743,7 @@ pub struct MoveModule {
     pub structs: Vec<MoveStruct>,
 }
 
+#[cfg(feature = "bytecode")]
 impl From<CompiledModule> for MoveModule {
     fn from(m: CompiledModule) -> Self {
         let (address, name) = <(AccountAddress, Identifier)>::from(m.self_id());
@@ -973,6 +975,7 @@ pub struct MoveFunction {
     pub return_: Vec<MoveType>,
 }
 
+#[cfg(feature = "bytecode")]
 impl From<&CompiledScript> for MoveFunction {
     fn from(script: &CompiledScript) -> Self {
         Self {
@@ -1072,6 +1075,7 @@ impl MoveModuleBytecode {
         }
     }
 
+    #[cfg(feature = "bytecode")]
     pub fn try_parse_abi(mut self) -> anyhow::Result<Self> {
         if self.abi.is_none() {
             // Ignore error, because it is possible a transaction module payload contains
@@ -1119,6 +1123,7 @@ impl MoveScriptBytecode {
         }
     }
 
+    #[cfg(feature = "bytecode")]
     pub fn try_parse_abi(mut self) -> Self {
         if self.abi.is_none() {
             // ignore error, because it is possible a transaction script payload contains

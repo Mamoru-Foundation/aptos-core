@@ -18,7 +18,8 @@ dpn = []
 
 [dependencies]
 anyhow = { workspace = true }
-aptos-api-types = { workspace = true }
+# Not using workspace because `default-features = false` does not work that way
+aptos-api-types = { path = "../../api/types", default-features = false }
 aptos-crypto = { workspace = true }
 aptos-infallible = { workspace = true }
 aptos-logger = { workspace = true }

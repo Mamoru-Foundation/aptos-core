@@ -217,6 +217,7 @@ impl<'r, 'l> AsyncSession<'r, 'l> {
                 SerializedReturnValues {
                     mutable_reference_outputs: _,
                     mut return_values,
+                    call_traces: _,
                 },
                 (mut change_set, mut native_extensions),
             )) => {
@@ -308,6 +309,7 @@ impl<'r, 'l> AsyncSession<'r, 'l> {
                 SerializedReturnValues {
                     mut mutable_reference_outputs,
                     return_values: _,
+                    call_traces: _,
                 },
                 (mut change_set, mut native_extensions),
             )) => {

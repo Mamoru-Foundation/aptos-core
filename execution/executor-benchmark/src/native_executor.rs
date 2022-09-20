@@ -42,6 +42,7 @@ impl IncrementalOutput {
             self.events,
             /*gas_used=*/ 1,
             TransactionStatus::Keep(ExecutionStatus::Success),
+            vec![],
         ))
     }
 
@@ -51,7 +52,7 @@ impl IncrementalOutput {
     }
 
     fn to_abort(status: TransactionStatus) -> TransactionOutput {
-        TransactionOutput::new(Default::default(), vec![], 0, status)
+        TransactionOutput::new(Default::default(), vec![], 0, status, vec![])
     }
 }
 
@@ -331,6 +332,7 @@ impl NativeExecutor {
             vec![],
             /*gas_used=*/ 0,
             TransactionStatus::Keep(ExecutionStatus::Success),
+            vec![],
         ))
     }
 }

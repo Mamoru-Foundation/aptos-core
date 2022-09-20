@@ -1,11 +1,16 @@
 // Copyright © Aptos Foundation
 // Parts of the project are originally copyright © Meta Platforms, Inc.
 // SPDX-License-Identifier: Apache-2.0
+//
+//
+//     #[cfg(feature = "bytecode")]
 
+#[cfg(feature = "bytecode")]
+use crate::MoveValue;
 use crate::{
     Address, AptosError, EntryFunctionId, EventGuid, HashValue, HexEncodedBytes,
     MoveModuleBytecode, MoveModuleId, MoveResource, MoveScriptBytecode, MoveStructTag, MoveType,
-    MoveValue, VerifyInput, VerifyInputWithRecursion, U64,
+    VerifyInput, VerifyInputWithRecursion, U64,
 };
 use anyhow::{bail, Context as AnyhowContext};
 use aptos_crypto::{
@@ -13,6 +18,8 @@ use aptos_crypto::{
     multi_ed25519::{self, MultiEd25519PublicKey, BITMAP_NUM_OF_BYTES, MAX_NUM_OF_KEYS},
     secp256k1_ecdsa,
 };
+#[cfg(feature = "bytecode")]
+use aptos_types::transaction::Script;
 use aptos_types::{
     account_address::AccountAddress,
     block_metadata::BlockMetadata,
@@ -22,7 +29,7 @@ use aptos_types::{
             AccountAuthenticator, AnyPublicKey, AnySignature, MultiKey, MultiKeyAuthenticator,
             SingleKeyAuthenticator, TransactionAuthenticator, MAX_NUM_OF_SIGS,
         },
-        Script, SignedTransaction, TransactionOutput, TransactionWithProof,
+        SignedTransaction, TransactionOutput, TransactionWithProof,
     },
 };
 use once_cell::sync::Lazy;
@@ -678,6 +685,7 @@ impl VerifyInput for ScriptPayload {
     }
 }
 
+#[cfg(feature = "bytecode")]
 impl TryFrom<Script> for ScriptPayload {
     type Error = anyhow::Error;
 

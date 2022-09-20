@@ -34,6 +34,7 @@ pub struct GasProfiler<G> {
     frames: Vec<CallFrame>,
     write_set_transient: Vec<WriteTransient>,
     storage_fees: Option<StorageFees>,
+    charged_already_total: InternalGas,
 }
 
 // TODO: consider switching to a library like https://docs.rs/delegate/latest/delegate/.
@@ -88,6 +89,7 @@ impl<G> GasProfiler<G> {
             frames: vec![CallFrame::new_script()],
             write_set_transient: vec![],
             storage_fees: None,
+            charged_already_total: InternalGas::new(0),
         }
     }
 
@@ -105,6 +107,7 @@ impl<G> GasProfiler<G> {
             frames: vec![CallFrame::new_function(module_id, func_name, ty_args)],
             write_set_transient: vec![],
             storage_fees: None,
+            charged_already_total: InternalGas::new(0),
         }
     }
 }
@@ -132,6 +135,8 @@ where
     }
 
     fn record_bytecode(&mut self, op: Opcodes, cost: InternalGas) {
+        self.charged_already_total =
+            InternalGas::new(self.charged_already_total.value() + cost.value());
         self.record_gas_event(ExecutionGasEvent::Bytecode { op, cost })
     }
 
@@ -455,6 +460,10 @@ where
         });
 
         res
+    }
+
+    fn charged_already_total(&self) -> Option<InternalGas> {
+        Some(self.charged_already_total)
     }
 }
 

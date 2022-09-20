@@ -26,6 +26,10 @@ variable "GCP_DOCKER_ARTIFACT_REPO_US" {}
 
 variable "AWS_ECR_ACCOUNT_NUM" {}
 
+variable "TARGET_IMAGE_NAME" {}
+
+variable "TARGET_IMAGE_TAG" {}
+
 variable "TARGET_REGISTRY" {
   // must be "gcp" | "local" | "remote-all" | "remote" (deprecated, but kept for backwards compatibility. Same as "gcp"), informs which docker tags are being generated
   default = CI == "true" ? "remote" : "local"
@@ -179,9 +183,9 @@ target "validator" {
   inherits   = ["_common"]
   dockerfile = "docker/builder/validator.Dockerfile"
   target     = "validator"
-  cache-from = generate_cache_from("validator")
-  cache-to   = generate_cache_to("validator")
-  tags       = generate_tags("validator")
+  tags       = [
+    "${TARGET_IMAGE_NAME}:${TARGET_IMAGE_TAG}"
+  ]
 }
 
 target "tools" {

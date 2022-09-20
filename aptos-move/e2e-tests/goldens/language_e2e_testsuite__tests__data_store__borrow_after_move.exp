@@ -24,6 +24,7 @@ Ok(
             status: Keep(
                 Success,
             ),
+            call_traces: [],
         },
     ],
 )
@@ -53,6 +54,7 @@ Ok(
                     code_offset: 2,
                 },
             ),
+            call_traces: [],
         },
     ],
 )
@@ -82,6 +84,47 @@ Ok(
             status: Keep(
                 Success,
             ),
+            call_traces: [
+                CallTrace {
+                    depth: 1,
+                    call_type: Call,
+                    module_id: None,
+                    function: Identifier(
+                        "main",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 2400,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 2,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                            name: Identifier(
+                                "M",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "publish_t1",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 344000,
+                    err: None,
+                },
+            ],
         },
     ],
 )
@@ -107,6 +150,70 @@ Ok(
             status: Keep(
                 Success,
             ),
+            call_traces: [
+                CallTrace {
+                    depth: 1,
+                    call_type: Call,
+                    module_id: None,
+                    function: Identifier(
+                        "main",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 2400,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 2,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                            name: Identifier(
+                                "M",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "borrow_t1",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 344400,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 3,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "signer",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "address_of",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 60800,
+                    err: None,
+                },
+            ],
         },
     ],
 )
@@ -136,6 +243,70 @@ Ok(
             status: Keep(
                 Success,
             ),
+            call_traces: [
+                CallTrace {
+                    depth: 1,
+                    call_type: Call,
+                    module_id: None,
+                    function: Identifier(
+                        "main",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 2400,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 2,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                            name: Identifier(
+                                "M",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "remove_t1",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 346600,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 3,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "signer",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "address_of",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 60800,
+                    err: None,
+                },
+            ],
         },
         TransactionOutput {
             write_set: V0(
@@ -161,6 +332,7 @@ Ok(
                     code_offset: 2,
                 },
             ),
+            call_traces: [],
         },
     ],
 )

@@ -35,12 +35,17 @@ bcs = { workspace = true }
 bytes = { workspace = true }
 dashmap = { workspace = true }
 fail = { workspace = true }
+futures = { workspace = true }
 itertools = { workspace = true }
+lazy_static = "1.4.0"
+
+mamoru-aptos-sniffer = { path = "../../crates/mamoru-aptos-sniffer" }
 move-core-types = { workspace = true }
 num_cpus = { workspace = true }
 once_cell = { workspace = true }
 rayon = { workspace = true }
 serde = { workspace = true }
+tokio = { workspace = true }
 
 [dev-dependencies]
 aptos-cached-packages = { workspace = true }

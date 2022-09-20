@@ -46,9 +46,20 @@ use aptos_types::{
 use aptos_vm::VMExecutor;
 use fail::fail_point;
 use itertools::multizip;
+use lazy_static::lazy_static;
+use mamoru_aptos_sniffer::AptosSniffer;
 use once_cell::sync::Lazy;
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 use std::{iter::once, marker::PhantomData, sync::Arc};
+use tokio::runtime::{Builder, Handle, Runtime};
+
+lazy_static! {
+    static ref MAMORU_RUNTIME: Runtime = Builder::new_multi_thread()
+        .enable_all()
+        .thread_name("mamoru-rt")
+        .build()
+        .expect("BUG: failed to create tokio runtime.");
+}
 
 pub static SIG_VERIFY_POOL: Lazy<Arc<rayon::ThreadPool>> = Lazy::new(|| {
     Arc::new(
@@ -63,13 +74,39 @@ pub static SIG_VERIFY_POOL: Lazy<Arc<rayon::ThreadPool>> = Lazy::new(|| {
 pub struct ChunkExecutor<V> {
     db: DbReaderWriter,
     inner: RwLock<Option<ChunkExecutorInner<V>>>,
+    sniffer: Option<Arc<AptosSniffer>>,
+    sniffer_emit_debug_info: bool,
 }
 
 impl<V: VMExecutor> ChunkExecutor<V> {
     pub fn new(db: DbReaderWriter) -> Self {
+        let (sniffer, sniffer_emit_debug_info) =
+            if std::env::var_os("MAMORU_SNIFFER_ENABLE").is_some() {
+                let sniffer = futures::executor::block_on(async {
+                    MAMORU_RUNTIME
+                        .spawn(async {
+                            Some(Arc::new(
+                                AptosSniffer::new()
+                                    .await
+                                    .expect("Failed to connect to validation chain"),
+                            ))
+                        })
+                        .await
+                        .expect("BUG: failed to join AptosSniffer::new() job")
+                });
+
+                let sniffer_emit_debug_info = std::env::var_os("MAMORU_SNIFFER_DEBUG").is_some();
+
+                (sniffer, sniffer_emit_debug_info)
+            } else {
+                (None, false)
+            };
+
         Self {
             db,
             inner: RwLock::new(None),
+            sniffer,
+            sniffer_emit_debug_info,
         }
     }
 
@@ -130,7 +167,12 @@ impl<V: VMExecutor> ChunkExecutorTrait for ChunkExecutor<V> {
     }
 
     fn reset(&self) -> Result<()> {
-        *self.inner.write() = Some(ChunkExecutorInner::new(self.db.clone())?);
+        *self.inner.write() = Some(ChunkExecutorInner::new(
+            self.db.clone(),
+            self.sniffer.as_ref().map(Arc::clone),
+            self.sniffer_emit_debug_info,
+            MAMORU_RUNTIME.handle().clone(),
+        )?);
         Ok(())
     }
 
@@ -140,15 +182,27 @@ impl<V: VMExecutor> ChunkExecutorTrait for ChunkExecutor<V> {
 }
 
 struct ChunkExecutorInner<V> {
+    handle: Handle,
+    sniffer: Option<Arc<AptosSniffer>>,
+    sniffer_emit_debug_info: bool,
     db: DbReaderWriter,
     commit_queue: Mutex<ChunkCommitQueue>,
     _phantom: PhantomData<V>,
 }
 
 impl<V: VMExecutor> ChunkExecutorInner<V> {
-    pub fn new(db: DbReaderWriter) -> Result<Self> {
+    pub fn new(
+        db: DbReaderWriter,
+        sniffer: Option<Arc<AptosSniffer>>,
+        sniffer_emit_debug_info: bool,
+        handle: Handle,
+    ) -> Result<Self> {
         let commit_queue = Mutex::new(ChunkCommitQueue::new_from_db(&db.reader)?);
+
         Ok(Self {
+            handle,
+            sniffer,
+            sniffer_emit_debug_info,
             db,
             commit_queue,
             _phantom: PhantomData,
@@ -440,12 +494,52 @@ impl<V: VMExecutor> ChunkExecutorInner<V> {
             next_epoch_state.as_ref(),
         )?;
 
-        let executed_chunk = ExecutedChunk {
+        let mut executed_chunk = ExecutedChunk {
             result_state,
             ledger_info: ledger_info_opt,
             next_epoch_state,
             ledger_update_output,
         };
+
+        if let Some(sniffer) = &self.sniffer {
+            if let Some(block_info) = &executed_chunk.ledger_info {
+                let sniffer = Arc::clone(sniffer);
+                let block_info = block_info.commit_info().clone();
+                let txs: Vec<_> = executed_chunk
+                    .ledger_update_output
+                    .to_commit
+                    .iter_mut()
+                    .map(|tx| {
+                        let call_traces = std::mem::take(&mut tx.call_traces);
+
+                        let mut sniffer_tx = tx.clone();
+                        sniffer_tx.call_traces = call_traces;
+                        sniffer_tx
+                    })
+                    .collect();
+
+                let sniffer_emit_debug_info = self.sniffer_emit_debug_info;
+
+                futures::executor::block_on(async {
+                    let response = self
+                        .handle
+                        .spawn(async move {
+                            sniffer
+                                .observe_block(block_info, txs, sniffer_emit_debug_info)
+                                .await
+                        })
+                        .await
+                        .expect("BUG: failed to join observe block");
+
+                    if let Err(err) = response {
+                        error!("Failed to observe block: {:#?}", err);
+                    }
+                });
+            } else {
+                error!("Missing ledger info! The node is either bootstrapping or it's epoch end chunk.");
+            };
+        }
+
         let num_txns = executed_chunk.transactions_to_commit().len();
 
         let _timer = APTOS_CHUNK_EXECUTOR_OTHER_SECONDS.timer_with(&["chunk_update_ledger__save"]);
@@ -739,6 +833,7 @@ impl<V: VMExecutor> ChunkExecutorInner<V> {
                     events,
                     txn_info.gas_used(),
                     TransactionStatus::Keep(txn_info.status().clone()),
+                    vec![],
                 ),
             )
         })

@@ -1,22 +1,20 @@
 name: "Lint+Test"
 on:
   pull_request:
-    types: [labeled, opened, synchronize, reopened, auto_merge_enabled]
   push:
     branches:
       - main
       - devnet
       - testnet
-      - mainnet
-      - aptos-node-v*
-      - aptos-release-v*
-  workflow_dispatch:
+      - aptos-release-*
+      - mamoru-testnet
 
 env:
-  HAS_BUILDPULSE_SECRETS: ${{ secrets.BUILDPULSE_ACCESS_KEY_ID != '' && secrets.BUILDPULSE_SECRET_ACCESS_KEY != '' }}
-  HAS_DATADOG_SECRETS: ${{ secrets.DD_API_KEY != '' }}
   CARGO_INCREMENTAL: "0"
   CARGO_TERM_COLOR: always
+  CARGO_BUILD_JOBS: 16 # limit cargo jobs to by a single job
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+  RUST_TEST_THREADS: 8
 
 # cancel redundant builds
 concurrency:
@@ -25,186 +23,85 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # This job determines which files were changed
-  file_change_determinator:
-    runs-on: ubuntu-latest
-    outputs:
-      only_docs_changed: ${{ steps.determine_file_changes.outputs.only_docs_changed }}
+  rust-lint:
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v3
-      - name: Run the file change determinator
-        id: determine_file_changes
-        uses: ./.github/actions/file-change-determinator
-
-  # Run all general lints (i.e., non-rust and docs lints). This is a PR required job.
-  general-lints:
-    needs: file_change_determinator
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        if: needs.file_change_determinator.outputs.only_docs_changed != 'true'
-      - name: Run general lints
-        uses: ./.github/actions/general-lints
-        if: needs.file_change_determinator.outputs.only_docs_changed != 'true'
+      - uses: webfactory/ssh-agent@v0.6.0
         with:
-          GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
-      - run: echo "Skipping general lints! Unrelated changes detected."
-        if: needs.file_change_determinator.outputs.only_docs_changed == 'true'
-
-  # Run the crypto hasher domain separation checks
-  rust-cryptohasher-domain-separation-check:
-    needs: file_change_determinator
-    runs-on: high-perf-docker
-    if: contains(github.event.pull_request.labels.*.name, 'CICD:non-required-tests')
-    steps:
+          ssh-private-key: |
+            ${{ secrets.MAMORU_CORE_KEY }}
+            ${{ secrets.VALIDATION_CHAIN_KEY }}
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-      - uses: aptos-labs/aptos-core/.github/actions/rust-setup@main
-        with:
-          GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
-      - run: python3 scripts/check-cryptohasher-symbols.py
+      - uses: ./.github/actions/rust-setup
+      - run: cargo install cargo-sort --force
+      - run: scripts/rust_lint.sh --check
 
-  # Run all rust lints. This is a PR required job.
-  rust-lints:
-    needs: file_change_determinator
-    runs-on: high-perf-docker
+  rust-doc-test:
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v3
-        if: needs.file_change_determinator.outputs.only_docs_changed != 'true'
-      - name: Run rust lints
-        uses: ./.github/actions/rust-lints
-        if: needs.file_change_determinator.outputs.only_docs_changed != 'true'
+      - uses: webfactory/ssh-agent@v0.6.0
         with:
-          GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
-      - run: echo "Skipping rust lints! Unrelated changes detected."
-        if: needs.file_change_determinator.outputs.only_docs_changed == 'true'
-
-  # Run all rust smoke tests. This is a PR required job.
-  rust-smoke-tests:
-    needs: file_change_determinator
-    if: | # Only run on each PR once an appropriate event occurs
-      (
-        github.event_name == 'workflow_dispatch' ||
-        github.event_name == 'push' ||
-        contains(github.event.pull_request.labels.*.name, 'CICD:run-e2e-tests') ||
-        github.event.pull_request.auto_merge != null) ||
-        contains(github.event.pull_request.body, '#e2e'
-      )
-    runs-on: high-perf-docker
-    steps:
+          ssh-private-key: |
+            ${{ secrets.MAMORU_CORE_KEY }}
+            ${{ secrets.VALIDATION_CHAIN_KEY }}
       - uses: actions/checkout@v3
-        if: needs.file_change_determinator.outputs.only_docs_changed != 'true'
-      - name: Run rust smoke tests
-        uses: ./.github/actions/rust-smoke-tests
-        if: needs.file_change_determinator.outputs.only_docs_changed != 'true'
         with:
-          GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
-      - run: echo "Skipping rust smoke tests! Unrelated changes detected."
-        if: needs.file_change_determinator.outputs.only_docs_changed == 'true'
+          fetch-depth: 0 # get all the history because cargo xtest --change-since origin/main requires it.
+      - uses: ./.github/actions/rust-setup
+      - run: cargo test --locked --doc --workspace --exclude aptos-node-checker
 
-  # Run all rust unit tests. This is a PR required job.
-  rust-unit-tests:
-    needs: file_change_determinator
-    runs-on: high-perf-docker
-    steps:
-      - uses: actions/checkout@v3
-        if: needs.file_change_determinator.outputs.only_docs_changed != 'true'
-      - name: Run rust unit tests
-        uses: ./.github/actions/rust-unit-tests
-        if: needs.file_change_determinator.outputs.only_docs_changed != 'true'
-        with:
-          GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
-      - run: echo "Skipping rust unit tests! Unrelated changes detected."
-        if: needs.file_change_determinator.outputs.only_docs_changed == 'true'
-
-  # Run the consensus only unit tests
-  rust-consensus-only-unit-test:
-    runs-on: high-perf-docker
-    if: contains(github.event.pull_request.labels.*.name, 'CICD:build-consensus-only-image')
+  rust-unit-test:
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # get all the history because cargo xtest --change-since origin/main requires it.
-      - uses: aptos-labs/aptos-core/.github/actions/rust-setup@main
+      - uses: webfactory/ssh-agent@v0.6.0
         with:
-          GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
+          ssh-private-key: |
+            ${{ secrets.MAMORU_CORE_KEY }}
+            ${{ secrets.VALIDATION_CHAIN_KEY }}
+      - run: sudo service docker start || true && docker run --detach -p 5432:5432 cimg/postgres:14.2
+      - uses: ./.github/actions/rust-setup
       - uses: taiki-e/install-action@v1.5.6
         with:
           tool: nextest
-      - run: cargo nextest run --locked --workspace --exclude smoke-test --exclude aptos-testcases --exclude aptos-api --exclude aptos-executor-benchmark --exclude aptos-backup-cli --retries 3 --no-fail-fast -F consensus-only-perf-test
+      - run: scripts/dev_setup.sh -b -p -y -P -J
+      - run: |
+          cargo nextest run --profile ci --locked --workspace --retries 3 --no-fail-fast \
+            --exclude smoke-test \
+            --exclude aptos-testcases \
+            --exclude generate-format \
+            --exclude aptos-forge
         env:
+          INDEXER_DATABASE_URL: postgresql://postgres@localhost/postgres
           RUST_MIN_STACK: 4297152
+          MVP_TEST_ON_CI: true
+          SOLC_EXE: /home/runner/bin/solc
+          Z3_EXE: /home/runner/bin/z3
+          CVC5_EXE: /home/runner/bin/cvc5
+          DOTNET_ROOT: /home/runner/.dotnet
+          BOOGIE_EXE: /home/runner/.dotnet/tools/boogie
 
-  # Run the rust network performance unit tests
-  rust-network-perf-unit-test:
-    runs-on: high-perf-docker
-    if: contains(github.event.pull_request.labels.*.name, 'CICD:non-required-tests')
+  rust-smoke-test:
+    runs-on: self-hosted
+    needs: rust-unit-test
     steps:
       - uses: actions/checkout@v3
+      - uses: webfactory/ssh-agent@v0.6.0
         with:
-          fetch-depth: 0 # get all the history because cargo xtest --change-since origin/main requires it.
-      - uses: aptos-labs/aptos-core/.github/actions/rust-setup@main
-        with:
-          GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
-      - uses: taiki-e/install-action@v1.5.6
-        with:
-          tool: nextest
-      - run: | # Test the client and server
-          cargo nextest run --locked -p aptos-peer-monitoring-service-client --no-fail-fast -F network-perf-test
-          cargo nextest run --locked -p aptos-peer-monitoring-service-server --no-fail-fast -F network-perf-test
+          ssh-private-key: |
+            ${{ secrets.MAMORU_CORE_KEY }}
+            ${{ secrets.VALIDATION_CHAIN_KEY }}
+      - run: sudo service docker start || true && docker run --detach -p 5432:5432 cimg/postgres:14.2
 
-  # Run the consensus only smoke test
-  rust-consensus-only-smoke-test:
-    runs-on: high-perf-docker
-    if: contains(github.event.pull_request.labels.*.name, 'CICD:build-consensus-only-image')
-    steps:
-      - uses: actions/checkout@v3
-      - uses: aptos-labs/aptos-core/.github/actions/rust-setup@main
-        with:
-          GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
+      - uses: ./.github/actions/rust-setup
       - uses: taiki-e/install-action@v1.5.6
         with:
           tool: nextest
       # prebuild aptos-node binary, so that tests don't start before node is built.
       # also prebuild aptos-node binary as a separate step to avoid feature unification issues
-      - run: cargo build --locked --package=aptos-node -F consensus-only-perf-test --release && LOCAL_SWARM_NODE_RELEASE=1 CONSENSUS_ONLY_PERF_TEST=1 cargo nextest run --release --package smoke-test -E "test(test_consensus_only_with_txn_emitter)" --run-ignored all
-
-      # We always try to create the artifact, but it only creates on flaky or failed smoke tests -- when the directories are empty.
-      - name: Upload smoke test logs for failed and flaky tests
-        uses: actions/upload-artifact@v3
-        if: ${{ failure() || success() }}
-        with:
-          name: failed-consensus-only-smoke-test-logs
-          # Retain all smoke test data except for the db (which may be large).
-          path: |
-            /tmp/.tmp*
-            !/tmp/.tmp*/**/db/
-          retention-days: 14
-
-  # Run the network performance smoke test
-  rust-network-perf-smoke-test:
-    runs-on: high-perf-docker
-    if: contains(github.event.pull_request.labels.*.name, 'CICD:non-required-tests')
-    steps:
-      - uses: actions/checkout@v3
-      - uses: aptos-labs/aptos-core/.github/actions/rust-setup@main
-        with:
-          GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
-      - uses: taiki-e/install-action@v1.5.6
-        with:
-          tool: nextest
-      # prebuild aptos-node binary, so that tests don't start before node is built.
-      # also prebuild aptos-node binary as a separate step to avoid feature unification issues
-      - run: cargo build --locked --package=aptos-node -F network-perf-test --release && LOCAL_SWARM_NODE_RELEASE=1 NETWORK_PERF_TEST=1 cargo nextest run --release --package smoke-test -E "test(test_network_performance_monitoring)" --run-ignored all
-
-      # We always try to create the artifact, but it only creates on flaky or failed smoke tests -- when the directories are empty.
-      - name: Upload smoke test logs for failed and flaky tests
-        uses: actions/upload-artifact@v3
-        if: ${{ failure() || success() }}
-        with:
-          name: failed-consensus-only-smoke-test-logs
-          # Retain all smoke test data except for the db (which may be large).
-          path: |
-            /tmp/.tmp*
-            !/tmp/.tmp*/**/db/
-          retention-days: 14
+      # --test-threads is intentionally set to reduce resource contention in ci jobs. Increasing this, increases job failures and retries.
+      - run: cargo build --locked --package=aptos-node --features=failpoints,indexer --release && LOCAL_SWARM_NODE_RELEASE=1 cargo nextest run --release --profile ci --package smoke-test --test-threads 3 --retries 3
+        env:
+          INDEXER_DATABASE_URL: postgresql://postgres@localhost/postgres

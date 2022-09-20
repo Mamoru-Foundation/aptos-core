@@ -8,6 +8,13 @@ license = "Apache-2.0"
 
 [dependencies]
 anyhow = "1.0.52"
+
+# external dependencies
+codespan = "0.11.1"
+codespan-reporting = "0.11.1"
+internment = { version = "0.5.0", features = [ "arc"] }
+itertools = "0.10.0"
+log = "0.4.14"
 move-binary-format = { path = "../move-binary-format" }
 move-bytecode-source-map = { path = "../move-ir-compiler/move-bytecode-source-map" }
 move-bytecode-verifier = { path = "../move-bytecode-verifier" }
@@ -18,13 +25,6 @@ move-core-types = { path = "../move-core/types" }
 move-disassembler = { path = "../tools/move-disassembler" }
 move-ir-types = { path = "../move-ir/types" }
 move-symbol-pool = { path = "../move-symbol-pool" }
-
-# external dependencies
-codespan = "0.11.1"
-codespan-reporting = "0.11.1"
-internment = { version = "0.5.0", features = [ "arc"] }
-itertools = "0.10.0"
-log = "0.4.14"
 num = "0.4.0"
 num-traits = "0.2.15"
 once_cell = "1.7.2"

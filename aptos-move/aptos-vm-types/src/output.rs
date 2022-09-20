@@ -11,7 +11,10 @@ use aptos_types::{
     transaction::{TransactionOutput, TransactionStatus},
     write_set::WriteOp,
 };
-use move_core_types::vm_status::{StatusCode, VMStatus};
+use move_core_types::{
+    trace::CallTrace,
+    vm_status::{StatusCode, VMStatus},
+};
 
 /// Output produced by the VM after executing a transaction.
 ///
@@ -22,6 +25,7 @@ pub struct VMOutput {
     change_set: VMChangeSet,
     fee_statement: FeeStatement,
     status: TransactionStatus,
+    call_traces: Vec<CallTrace>,
 }
 
 impl VMOutput {
@@ -29,11 +33,13 @@ impl VMOutput {
         change_set: VMChangeSet,
         fee_statement: FeeStatement,
         status: TransactionStatus,
+        call_traces: Vec<CallTrace>,
     ) -> Self {
         Self {
             change_set,
             fee_statement,
             status,
+            call_traces,
         }
     }
 
@@ -42,15 +48,28 @@ impl VMOutput {
             change_set: VMChangeSet::empty(),
             fee_statement: FeeStatement::zero(),
             status,
+            call_traces: vec![],
         }
     }
 
-    pub fn unpack(self) -> (VMChangeSet, u64, TransactionStatus) {
-        (self.change_set, self.fee_statement.gas_used(), self.status)
+    pub fn unpack(self) -> (VMChangeSet, u64, TransactionStatus, Vec<CallTrace>) {
+        (
+            self.change_set,
+            self.fee_statement.gas_used(),
+            self.status,
+            self.call_traces,
+        )
     }
 
-    pub fn unpack_with_fee_statement(self) -> (VMChangeSet, FeeStatement, TransactionStatus) {
-        (self.change_set, self.fee_statement, self.status)
+    pub fn unpack_with_fee_statement(
+        self,
+    ) -> (VMChangeSet, FeeStatement, TransactionStatus, Vec<CallTrace>) {
+        (
+            self.change_set,
+            self.fee_statement,
+            self.status,
+            self.call_traces,
+        )
     }
 
     pub fn change_set(&self) -> &VMChangeSet {
@@ -116,8 +135,8 @@ impl VMOutput {
 
     /// Constructs `TransactionOutput`, without doing `try_materialize`
     pub fn into_transaction_output(self) -> anyhow::Result<TransactionOutput, VMStatus> {
-        let (change_set, fee_statement, status) = self.unpack_with_fee_statement();
-        let output = VMOutput::new(change_set, fee_statement, status);
+        let (change_set, fee_statement, status, call_traces) = self.unpack_with_fee_statement();
+        let output = VMOutput::new(change_set, fee_statement, status, call_traces);
         Self::convert_to_transaction_output(output).map_err(|e| {
             VMStatus::error(
                 StatusCode::DELAYED_FIELDS_CODE_INVARIANT_ERROR,
@@ -129,9 +148,15 @@ impl VMOutput {
     fn convert_to_transaction_output(
         materialized_output: VMOutput,
     ) -> Result<TransactionOutput, PanicError> {
-        let (vm_change_set, gas_used, status) = materialized_output.unpack();
+        let (vm_change_set, gas_used, status, call_traces) = materialized_output.unpack();
         let (write_set, events) = vm_change_set.try_into_storage_change_set()?.into_inner();
-        Ok(TransactionOutput::new(write_set, events, gas_used, status))
+        Ok(TransactionOutput::new(
+            write_set,
+            events,
+            gas_used,
+            status,
+            call_traces,
+        ))
     }
 
     /// Updates the VMChangeSet based on the input aggregator v1 deltas, patched resource write set,

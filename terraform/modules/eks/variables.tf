@@ -99,3 +99,4 @@ variable "num_extra_instance" {
   default     = 0
   description = "Number of extra instances to add into node pool"
 }
+

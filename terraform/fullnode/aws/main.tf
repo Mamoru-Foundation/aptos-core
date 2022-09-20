@@ -15,15 +15,15 @@ locals {
     ? [for t in data.aws_ecr_image.stable[0].image_tags : t if substr(t, 0, 5) == "main_"][0]
     : "latest"
   )
-  aws_tags       = "Terraform=pfn,Workspace=${local.workspace_name}"
-  workspace_name = var.workspace_name_override == "" ? terraform.workspace : var.workspace_name_override
+  aws_tags       = "Terraform=pfn,Workspace=${terraform.workspace}"
+  workspace_name = terraform.workspace
 }
 
 module "eks" {
   source                      = "../../modules/eks"
   region                      = var.region
-  workspace_name_override     = "pfn-${local.workspace_name}"
-  eks_cluster_name            = "aptos-pfn-${local.workspace_name}"
+  workspace_name_override     = "pfn-${terraform.workspace}"
+  eks_cluster_name            = "aptos-pfn-${terraform.workspace}"
   iam_path                    = var.iam_path
   k8s_admins                  = var.k8s_admins
   k8s_admin_roles             = var.k8s_admin_roles
@@ -34,11 +34,13 @@ module "eks" {
   num_extra_instance          = var.num_extra_instance
 }
 
+locals {
+  oidc_provider = module.eks.oidc_provider
+}
+
 data "aws_eks_cluster" "aptos" {
-  depends_on = [
-    module.eks
-  ]
-  name = "aptos-pfn-${local.workspace_name}"
+  name       = "aptos-pfn-${terraform.workspace}"
+  depends_on = [module.eks]
 }
 
 data "aws_eks_cluster_auth" "aptos" {

@@ -25,6 +25,8 @@ move-table-extension = { path = "../../extensions/move-table-extension", optiona
 move-vm-runtime = { path = "../runtime", features = ["testing"] }
 move-vm-test-utils = { path = "../test-utils" }
 move-vm-types = { path = "../types" }
+envtestkit = "1.1.2"
+expect-test = "1.4.1"
 
 [features]
 default = []

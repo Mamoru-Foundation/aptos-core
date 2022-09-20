@@ -130,6 +130,8 @@ impl SimpleInstruction {
 pub trait GasMeter {
     fn balance_internal(&self) -> InternalGas;
 
+    fn charged_already_total(&self) -> Option<InternalGas>;
+
     /// Charge an instruction and fail if not enough gas units are left.
     fn charge_simple_instr(&mut self, instr: SimpleInstruction) -> PartialVMResult<()>;
 
@@ -306,6 +308,10 @@ pub struct UnmeteredGasMeter;
 impl GasMeter for UnmeteredGasMeter {
     fn balance_internal(&self) -> InternalGas {
         u64::MAX.into()
+    }
+
+    fn charged_already_total(&self) -> Option<InternalGas> {
+        Some(InternalGas::new(0))
     }
 
     fn charge_simple_instr(&mut self, _instr: SimpleInstruction) -> PartialVMResult<()> {

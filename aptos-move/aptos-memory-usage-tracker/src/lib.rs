@@ -164,6 +164,11 @@ where
     }
 
     #[inline]
+    fn charged_already_total(&self) -> Option<InternalGas> {
+        self.base.charged_already_total()
+    }
+
+    #[inline]
     fn charge_call_generic(
         &mut self,
         module_id: &ModuleId,

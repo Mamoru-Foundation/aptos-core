@@ -17,7 +17,7 @@ pub struct TransactionsByStatus {
     // but doesn't contain StateCheckpoint/BlockEpilogue, as those get added during execution
     statuses_for_input_txns: Vec<TransactionStatus>,
     // List of all transactions to be committed, including StateCheckpoint/BlockEpilogue if needed.
-    to_commit: TransactionsWithParsedOutput,
+    pub to_commit: TransactionsWithParsedOutput,
     to_discard: TransactionsWithParsedOutput,
     to_retry: TransactionsWithParsedOutput,
 }
@@ -60,7 +60,7 @@ impl TransactionsByStatus {
 
 #[derive(Default)]
 pub struct StateCheckpointOutput {
-    txns: TransactionsByStatus,
+    pub txns: TransactionsByStatus,
     per_version_state_updates: Vec<ShardedStateUpdates>,
     state_checkpoint_hashes: Vec<Option<HashValue>>,
     state_updates_before_last_checkpoint: Option<ShardedStateUpdates>,

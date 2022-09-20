@@ -7,11 +7,11 @@ edition = "2021"
 license = "Apache-2.0"
 
 [dependencies]
+
+diem-crypto = { path = "../crypto" }
 move-binary-format = { path = "../../../../../move-binary-format" }
 move-core-types = { path = "../../../../../move-core/types" }
 move-vm-runtime = { path = "../../../../../move-vm/runtime" }
 move-vm-types = { path = "../../../../../move-vm/types" }
-
-diem-crypto = { path = "../crypto" }
 
 smallvec = "1.6.1"

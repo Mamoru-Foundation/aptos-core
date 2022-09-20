@@ -11,11 +11,6 @@ default-run = "main"
 
 [dependencies]
 anyhow = { workspace = true }
-bcs = { workspace = true }
-clap = { workspace = true }
-glob = { workspace = true }
-once_cell = { workspace = true }
-smallvec = { workspace = true }
 
 aptos-cached-packages = { workspace = true }
 aptos-gas-schedule = { workspace = true }
@@ -26,6 +21,9 @@ aptos-table-natives = { workspace = true }
 aptos-types = { workspace = true }
 aptos-vm = { workspace = true }
 aptos-vm-genesis = { workspace = true }
+bcs = { workspace = true }
+clap = { workspace = true }
+glob = { workspace = true }
 
 move-binary-format = { workspace = true }
 move-core-types = { workspace = true }
@@ -33,6 +31,8 @@ move-ir-compiler = { workspace = true }
 move-vm-runtime = { workspace = true }
 move-vm-test-utils = { workspace = true }
 move-vm-types = { workspace = true }
+once_cell = { workspace = true }
+smallvec = { workspace = true }
 
 [[bin]]
 name = "main"

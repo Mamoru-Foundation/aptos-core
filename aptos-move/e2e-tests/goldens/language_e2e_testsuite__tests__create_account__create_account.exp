@@ -29,6 +29,1110 @@ Ok(
             status: Keep(
                 Success,
             ),
+            call_traces: [
+                CallTrace {
+                    depth: 1,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "aptos_account",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "create_account",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Address(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 7200,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 2,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "account",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "create_account",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Address(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 516000,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 3,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "account",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "create_account_unchecked",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Address(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 186400,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 4,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "guid",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "create",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Address(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                        U64(
+                            0,
+                        ),
+                    ],
+                    gas_used: 77200,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 4,
+                    call_type: CallGeneric,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "event",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "new_event_handle",
+                    ),
+                    ty_args: [
+                        Struct(
+                            StructTag {
+                                address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                module: Identifier(
+                                    "account",
+                                ),
+                                name: Identifier(
+                                    "CoinRegisterEvent",
+                                ),
+                                type_params: [],
+                            },
+                        ),
+                    ],
+                    args: [
+                        Struct(
+                            WithTypes {
+                                type_: StructTag {
+                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                    module: Identifier(
+                                        "guid",
+                                    ),
+                                    name: Identifier(
+                                        "GUID",
+                                    ),
+                                    type_params: [],
+                                },
+                                fields: [
+                                    (
+                                        Identifier(
+                                            "id",
+                                        ),
+                                        Struct(
+                                            WithTypes {
+                                                type_: StructTag {
+                                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                                    module: Identifier(
+                                                        "guid",
+                                                    ),
+                                                    name: Identifier(
+                                                        "ID",
+                                                    ),
+                                                    type_params: [],
+                                                },
+                                                fields: [
+                                                    (
+                                                        Identifier(
+                                                            "creation_num",
+                                                        ),
+                                                        U64(
+                                                            0,
+                                                        ),
+                                                    ),
+                                                    (
+                                                        Identifier(
+                                                            "addr",
+                                                        ),
+                                                        Address(
+                                                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
+                                        ),
+                                    ),
+                                ],
+                            },
+                        ),
+                    ],
+                    gas_used: 36800,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 4,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "guid",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "create",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Address(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                        U64(
+                            1,
+                        ),
+                    ],
+                    gas_used: 77200,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 4,
+                    call_type: CallGeneric,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "event",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "new_event_handle",
+                    ),
+                    ty_args: [
+                        Struct(
+                            StructTag {
+                                address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                module: Identifier(
+                                    "account",
+                                ),
+                                name: Identifier(
+                                    "KeyRotationEvent",
+                                ),
+                                type_params: [],
+                            },
+                        ),
+                    ],
+                    args: [
+                        Struct(
+                            WithTypes {
+                                type_: StructTag {
+                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                    module: Identifier(
+                                        "guid",
+                                    ),
+                                    name: Identifier(
+                                        "GUID",
+                                    ),
+                                    type_params: [],
+                                },
+                                fields: [
+                                    (
+                                        Identifier(
+                                            "id",
+                                        ),
+                                        Struct(
+                                            WithTypes {
+                                                type_: StructTag {
+                                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                                    module: Identifier(
+                                                        "guid",
+                                                    ),
+                                                    name: Identifier(
+                                                        "ID",
+                                                    ),
+                                                    type_params: [],
+                                                },
+                                                fields: [
+                                                    (
+                                                        Identifier(
+                                                            "creation_num",
+                                                        ),
+                                                        U64(
+                                                            1,
+                                                        ),
+                                                    ),
+                                                    (
+                                                        Identifier(
+                                                            "addr",
+                                                        ),
+                                                        Address(
+                                                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
+                                        ),
+                                    ),
+                                ],
+                            },
+                        ),
+                    ],
+                    gas_used: 36800,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 4,
+                    call_type: CallGeneric,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "option",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "none",
+                    ),
+                    ty_args: [
+                        Address,
+                    ],
+                    args: [],
+                    gas_used: 40400,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 4,
+                    call_type: CallGeneric,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "option",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "none",
+                    ),
+                    ty_args: [
+                        Address,
+                    ],
+                    args: [],
+                    gas_used: 40400,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 2,
+                    call_type: CallGeneric,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "coin",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "register",
+                    ),
+                    ty_args: [
+                        Struct(
+                            StructTag {
+                                address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                module: Identifier(
+                                    "aptos_coin",
+                                ),
+                                name: Identifier(
+                                    "AptosCoin",
+                                ),
+                                type_params: [],
+                            },
+                        ),
+                    ],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 90000,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 3,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "signer",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "address_of",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 60800,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 3,
+                    call_type: CallGeneric,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "coin",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "is_account_registered",
+                    ),
+                    ty_args: [
+                        Struct(
+                            StructTag {
+                                address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                module: Identifier(
+                                    "aptos_coin",
+                                ),
+                                name: Identifier(
+                                    "AptosCoin",
+                                ),
+                                type_params: [],
+                            },
+                        ),
+                    ],
+                    args: [
+                        Address(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 334600,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 3,
+                    call_type: CallGeneric,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "account",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "register_coin",
+                    ),
+                    ty_args: [
+                        Struct(
+                            StructTag {
+                                address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                module: Identifier(
+                                    "aptos_coin",
+                                ),
+                                name: Identifier(
+                                    "AptosCoin",
+                                ),
+                                type_params: [],
+                            },
+                        ),
+                    ],
+                    args: [
+                        Address(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 79400,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 4,
+                    call_type: CallGeneric,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "event",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "emit_event",
+                    ),
+                    ty_args: [
+                        Struct(
+                            StructTag {
+                                address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                module: Identifier(
+                                    "account",
+                                ),
+                                name: Identifier(
+                                    "CoinRegisterEvent",
+                                ),
+                                type_params: [],
+                            },
+                        ),
+                    ],
+                    args: [
+                        Struct(
+                            WithTypes {
+                                type_: StructTag {
+                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                    module: Identifier(
+                                        "event",
+                                    ),
+                                    name: Identifier(
+                                        "EventHandle",
+                                    ),
+                                    type_params: [
+                                        Struct(
+                                            StructTag {
+                                                address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                                module: Identifier(
+                                                    "account",
+                                                ),
+                                                name: Identifier(
+                                                    "CoinRegisterEvent",
+                                                ),
+                                                type_params: [],
+                                            },
+                                        ),
+                                    ],
+                                },
+                                fields: [
+                                    (
+                                        Identifier(
+                                            "counter",
+                                        ),
+                                        U64(
+                                            0,
+                                        ),
+                                    ),
+                                    (
+                                        Identifier(
+                                            "guid",
+                                        ),
+                                        Struct(
+                                            WithTypes {
+                                                type_: StructTag {
+                                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                                    module: Identifier(
+                                                        "guid",
+                                                    ),
+                                                    name: Identifier(
+                                                        "GUID",
+                                                    ),
+                                                    type_params: [],
+                                                },
+                                                fields: [
+                                                    (
+                                                        Identifier(
+                                                            "id",
+                                                        ),
+                                                        Struct(
+                                                            WithTypes {
+                                                                type_: StructTag {
+                                                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                                                    module: Identifier(
+                                                                        "guid",
+                                                                    ),
+                                                                    name: Identifier(
+                                                                        "ID",
+                                                                    ),
+                                                                    type_params: [],
+                                                                },
+                                                                fields: [
+                                                                    (
+                                                                        Identifier(
+                                                                            "creation_num",
+                                                                        ),
+                                                                        U64(
+                                                                            0,
+                                                                        ),
+                                                                    ),
+                                                                    (
+                                                                        Identifier(
+                                                                            "addr",
+                                                                        ),
+                                                                        Address(
+                                                                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                                                                        ),
+                                                                    ),
+                                                                ],
+                                                            },
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
+                                        ),
+                                    ),
+                                ],
+                            },
+                        ),
+                        Struct(
+                            WithTypes {
+                                type_: StructTag {
+                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                    module: Identifier(
+                                        "account",
+                                    ),
+                                    name: Identifier(
+                                        "CoinRegisterEvent",
+                                    ),
+                                    type_params: [],
+                                },
+                                fields: [
+                                    (
+                                        Identifier(
+                                            "type_info",
+                                        ),
+                                        Struct(
+                                            WithTypes {
+                                                type_: StructTag {
+                                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                                    module: Identifier(
+                                                        "type_info",
+                                                    ),
+                                                    name: Identifier(
+                                                        "TypeInfo",
+                                                    ),
+                                                    type_params: [],
+                                                },
+                                                fields: [
+                                                    (
+                                                        Identifier(
+                                                            "account_address",
+                                                        ),
+                                                        Address(
+                                                            0000000000000000000000000000000000000000000000000000000000000001,
+                                                        ),
+                                                    ),
+                                                    (
+                                                        Identifier(
+                                                            "module_name",
+                                                        ),
+                                                        Vector(
+                                                            [
+                                                                U8(
+                                                                    97,
+                                                                ),
+                                                                U8(
+                                                                    112,
+                                                                ),
+                                                                U8(
+                                                                    116,
+                                                                ),
+                                                                U8(
+                                                                    111,
+                                                                ),
+                                                                U8(
+                                                                    115,
+                                                                ),
+                                                                U8(
+                                                                    95,
+                                                                ),
+                                                                U8(
+                                                                    99,
+                                                                ),
+                                                                U8(
+                                                                    111,
+                                                                ),
+                                                                U8(
+                                                                    105,
+                                                                ),
+                                                                U8(
+                                                                    110,
+                                                                ),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    (
+                                                        Identifier(
+                                                            "struct_name",
+                                                        ),
+                                                        Vector(
+                                                            [
+                                                                U8(
+                                                                    65,
+                                                                ),
+                                                                U8(
+                                                                    112,
+                                                                ),
+                                                                U8(
+                                                                    116,
+                                                                ),
+                                                                U8(
+                                                                    111,
+                                                                ),
+                                                                U8(
+                                                                    115,
+                                                                ),
+                                                                U8(
+                                                                    67,
+                                                                ),
+                                                                U8(
+                                                                    111,
+                                                                ),
+                                                                U8(
+                                                                    105,
+                                                                ),
+                                                                U8(
+                                                                    110,
+                                                                ),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
+                                        ),
+                                    ),
+                                ],
+                            },
+                        ),
+                    ],
+                    gas_used: 1544400,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 3,
+                    call_type: CallGeneric,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "account",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "new_event_handle",
+                    ),
+                    ty_args: [
+                        Struct(
+                            StructTag {
+                                address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                module: Identifier(
+                                    "coin",
+                                ),
+                                name: Identifier(
+                                    "DepositEvent",
+                                ),
+                                type_params: [],
+                            },
+                        ),
+                    ],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 29600,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 4,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "account",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "create_guid",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 108600,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 5,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "signer",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "address_of",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 60800,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 5,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "guid",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "create",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Address(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                        U64(
+                            2,
+                        ),
+                    ],
+                    gas_used: 77200,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 4,
+                    call_type: CallGeneric,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "event",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "new_event_handle",
+                    ),
+                    ty_args: [
+                        Struct(
+                            StructTag {
+                                address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                module: Identifier(
+                                    "coin",
+                                ),
+                                name: Identifier(
+                                    "DepositEvent",
+                                ),
+                                type_params: [],
+                            },
+                        ),
+                    ],
+                    args: [
+                        Struct(
+                            WithTypes {
+                                type_: StructTag {
+                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                    module: Identifier(
+                                        "guid",
+                                    ),
+                                    name: Identifier(
+                                        "GUID",
+                                    ),
+                                    type_params: [],
+                                },
+                                fields: [
+                                    (
+                                        Identifier(
+                                            "id",
+                                        ),
+                                        Struct(
+                                            WithTypes {
+                                                type_: StructTag {
+                                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                                    module: Identifier(
+                                                        "guid",
+                                                    ),
+                                                    name: Identifier(
+                                                        "ID",
+                                                    ),
+                                                    type_params: [],
+                                                },
+                                                fields: [
+                                                    (
+                                                        Identifier(
+                                                            "creation_num",
+                                                        ),
+                                                        U64(
+                                                            2,
+                                                        ),
+                                                    ),
+                                                    (
+                                                        Identifier(
+                                                            "addr",
+                                                        ),
+                                                        Address(
+                                                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
+                                        ),
+                                    ),
+                                ],
+                            },
+                        ),
+                    ],
+                    gas_used: 36800,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 3,
+                    call_type: CallGeneric,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "account",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "new_event_handle",
+                    ),
+                    ty_args: [
+                        Struct(
+                            StructTag {
+                                address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                module: Identifier(
+                                    "coin",
+                                ),
+                                name: Identifier(
+                                    "WithdrawEvent",
+                                ),
+                                type_params: [],
+                            },
+                        ),
+                    ],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 29600,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 4,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "account",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "create_guid",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 108600,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 5,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "signer",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "address_of",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Signer(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                    ],
+                    gas_used: 60800,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 5,
+                    call_type: Call,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "guid",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "create",
+                    ),
+                    ty_args: [],
+                    args: [
+                        Address(
+                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                        ),
+                        U64(
+                            3,
+                        ),
+                    ],
+                    gas_used: 77200,
+                    err: None,
+                },
+                CallTrace {
+                    depth: 4,
+                    call_type: CallGeneric,
+                    module_id: Some(
+                        ModuleId {
+                            address: 0000000000000000000000000000000000000000000000000000000000000001,
+                            name: Identifier(
+                                "event",
+                            ),
+                        },
+                    ),
+                    function: Identifier(
+                        "new_event_handle",
+                    ),
+                    ty_args: [
+                        Struct(
+                            StructTag {
+                                address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                module: Identifier(
+                                    "coin",
+                                ),
+                                name: Identifier(
+                                    "WithdrawEvent",
+                                ),
+                                type_params: [],
+                            },
+                        ),
+                    ],
+                    args: [
+                        Struct(
+                            WithTypes {
+                                type_: StructTag {
+                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                    module: Identifier(
+                                        "guid",
+                                    ),
+                                    name: Identifier(
+                                        "GUID",
+                                    ),
+                                    type_params: [],
+                                },
+                                fields: [
+                                    (
+                                        Identifier(
+                                            "id",
+                                        ),
+                                        Struct(
+                                            WithTypes {
+                                                type_: StructTag {
+                                                    address: 0000000000000000000000000000000000000000000000000000000000000001,
+                                                    module: Identifier(
+                                                        "guid",
+                                                    ),
+                                                    name: Identifier(
+                                                        "ID",
+                                                    ),
+                                                    type_params: [],
+                                                },
+                                                fields: [
+                                                    (
+                                                        Identifier(
+                                                            "creation_num",
+                                                        ),
+                                                        U64(
+                                                            3,
+                                                        ),
+                                                    ),
+                                                    (
+                                                        Identifier(
+                                                            "addr",
+                                                        ),
+                                                        Address(
+                                                            f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1,
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
+                                        ),
+                                    ),
+                                ],
+                            },
+                        ),
+                    ],
+                    gas_used: 36800,
+                    err: None,
+                },
+            ],
         },
     ],
 )

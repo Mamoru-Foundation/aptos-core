@@ -7,7 +7,11 @@
 mod account;
 mod address;
 mod block;
+
+#[cfg(feature = "bytecode")]
 mod bytecode;
+
+#[cfg(feature = "convert")]
 mod convert;
 mod derives;
 mod error;
@@ -26,7 +30,9 @@ mod wrappers;
 pub use account::AccountData;
 pub use address::Address;
 pub use block::{BcsBlock, Block};
+#[cfg(feature = "bytecode")]
 pub use bytecode::Bytecode;
+#[cfg(feature = "convert")]
 pub use convert::{new_vm_utf8_string, AsConverter, ExplainVMStatus, MoveConverter};
 pub use error::{AptosError, AptosErrorCode};
 pub use hash::HashValue;

@@ -8,7 +8,7 @@ use clap::Parser;
 use rand::thread_rng;
 use std::time::Instant;
 
-#[cfg(unix)]
+#[cfg(feature = "jemalloc")]
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 

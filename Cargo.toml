@@ -96,6 +96,7 @@ members = [
     "crates/crash-handler",
     "crates/fallible",
     "crates/indexer",
+    "crates/mamoru-aptos-sniffer",
     "crates/moving-average",
     "crates/node-resource-metrics",
     "crates/num-variants",
@@ -679,7 +680,7 @@ walkdir = "2.3.3"
 warp = { version = "0.3.5", features = ["tls"] }
 warp-reverse-proxy = "1.0.0"
 which = "4.2.5"
-x25519-dalek = "1.2.0"
+x25519-dalek = { git = "https://github.com/aptos-labs/x25519-dalek", branch = "zeroize_v1" }
 
 # MOVE DEPENDENCIES
 move-abigen = { path = "third_party/move/move-prover/move-abigen" }
@@ -757,3 +758,6 @@ merlin = { git = "https://github.com/aptos-labs/merlin" }
 x25519-dalek = { git = "https://github.com/aptos-labs/x25519-dalek", branch = "zeroize_v1" }
 # More context here: https://github.com/weiznich/diesel_async/pull/121.
 diesel-async = { git = "https://github.com/banool/diesel_async", rev = "7115c8668b88d56029cb1471e84d2ea0234ff035" }
+
+[patch.'git+https://github.com/aptos-labs/aptos-core.git']
+aptos-protos = { path = "protos/rust" }
