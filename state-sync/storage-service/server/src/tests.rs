@@ -3363,6 +3363,7 @@ fn create_test_transaction_output() -> TransactionOutput {
         vec![],
         0,
         TransactionStatus::Keep(ExecutionStatus::MiscellaneousError(None)),
+        vec![],
     )
 }
 

@@ -24,6 +24,7 @@ use aptos_types::{
 };
 pub use error::Error;
 pub use executed_chunk::ExecutedChunk;
+use move_core_types::trace::CallTrace;
 pub use parsed_transaction_output::ParsedTransactionOutput;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -413,6 +414,9 @@ pub struct TransactionData {
 
     /// TransactionInfo.hash()
     txn_info_hash: HashValue,
+
+    /// Call traces generated during the transaction execution
+    pub call_traces: Vec<CallTrace>,
 }
 
 impl TransactionData {
@@ -426,6 +430,7 @@ impl TransactionData {
         gas_used: u64,
         txn_info: TransactionInfo,
         txn_info_hash: HashValue,
+        call_traces: Vec<CallTrace>,
     ) -> Self {
         TransactionData {
             state_updates,
@@ -437,6 +442,7 @@ impl TransactionData {
             gas_used,
             txn_info,
             txn_info_hash,
+            call_traces,
         }
     }
 
@@ -466,6 +472,10 @@ impl TransactionData {
 
     pub fn txn_info_hash(&self) -> HashValue {
         self.txn_info_hash
+    }
+
+    pub fn state_change_hash(&self) -> HashValue {
+        self.txn_info.state_change_hash()
     }
 
     pub fn is_reconfig(&self) -> bool {

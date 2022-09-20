@@ -36,6 +36,7 @@ use move_core_types::{
     language_storage::ModuleId,
     move_resource::MoveStructType,
     resolver::ResourceResolver,
+    trace::CallTrace,
     value::{serialize_values, MoveValue},
 };
 use move_vm_runtime::logging::expect_no_verification_errors;
@@ -646,6 +647,7 @@ pub(crate) fn get_transaction_output<A: AccessPathCache, S: MoveResolverExt>(
     txn_data: &TransactionMetadata,
     status: ExecutionStatus,
     change_set_configs: &ChangeSetConfigs,
+    call_traces: Vec<CallTrace>,
 ) -> Result<TransactionOutputExt, VMStatus> {
     let gas_used = txn_data
         .max_gas_amount()
@@ -663,6 +665,7 @@ pub(crate) fn get_transaction_output<A: AccessPathCache, S: MoveResolverExt>(
         events,
         gas_used.into(),
         TransactionStatus::Keep(status),
+        call_traces,
     );
 
     Ok(TransactionOutputExt::new(delta_change_set, txn_output))

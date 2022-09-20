@@ -217,6 +217,7 @@ pub struct AptosGasMeter {
     gas_params: AptosGasParameters,
     storage_gas_params: StorageGasParameters,
     balance: InternalGas,
+    initial_balance: InternalGas,
     memory_quota: AbstractValueSize,
 
     execution_gas_used: InternalGas,
@@ -237,6 +238,7 @@ impl AptosGasMeter {
         let balance = balance.into().to_unit_with_params(&gas_params.txn);
 
         Self {
+            initial_balance: balance,
             feature_version: gas_feature_version,
             gas_params,
             storage_gas_params,
@@ -805,6 +807,11 @@ impl GasMeter for AptosGasMeter {
         }));
 
         Ok(())
+    }
+
+    #[inline]
+    fn charged_already_total(&self) -> Option<InternalGas> {
+        self.initial_balance.checked_sub(self.balance)
     }
 }
 

@@ -76,6 +76,7 @@ impl BlockExecutorTransactionOutput for AptosTransactionOutput {
             vec![],
             0,
             TransactionStatus::Retry,
+            vec![],
         )))
     }
 }

@@ -17,7 +17,7 @@ use aptos_types::{
 };
 use std::sync::Arc;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ExecutedChunk {
     pub status: Vec<TransactionStatus>,
     pub to_commit: Vec<(Transaction, TransactionData)>,

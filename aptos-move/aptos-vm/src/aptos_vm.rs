@@ -54,9 +54,11 @@ use move_core_types::{
     ident_str,
     identifier::Identifier,
     language_storage::{ModuleId, TypeTag},
+    trace::CallTrace,
     transaction_argument::convert_txn_args,
     value::{serialize_values, MoveValue},
 };
+use move_vm_runtime::session::SerializedReturnValues;
 use move_vm_types::gas::UnmeteredGasMeter;
 use num_cpus;
 use once_cell::sync::OnceCell;
@@ -79,6 +81,7 @@ static TIMED_FEATURE_OVERRIDE: OnceCell<TimedFeatureOverride> = OnceCell::new();
 
 /// Remove this once the bundle is removed from the code.
 static MODULE_BUNDLE_DISALLOWED: AtomicBool = AtomicBool::new(true);
+
 pub fn allow_module_bundle_for_test() {
     MODULE_BUNDLE_DISALLOWED.store(false, Ordering::Relaxed);
 }
@@ -254,6 +257,7 @@ impl AptosVM {
                     txn_data,
                     status,
                     gas_meter.change_set_configs(),
+                    vec![],
                 )
                 .unwrap_or_else(|e| discard_error_vm_status(e).1);
                 (error_code, txn_output)
@@ -272,6 +276,7 @@ impl AptosVM {
         gas_meter: &mut AptosGasMeter,
         txn_data: &TransactionMetadata,
         log_context: &AdapterLogSchema,
+        call_traces: Vec<CallTrace>,
     ) -> Result<(VMStatus, TransactionOutputExt), VMStatus> {
         let storage_with_changes =
             DeltaStateView::new(storage, user_txn_change_set_ext.write_set());
@@ -320,6 +325,7 @@ impl AptosVM {
             events,
             gas_used.into(),
             TransactionStatus::Keep(ExecutionStatus::Success),
+            call_traces,
         );
 
         Ok((
@@ -350,7 +356,7 @@ impl AptosVM {
                 .charge_intrinsic_gas_for_transaction(txn_data.transaction_size())
                 .map_err(|e| e.into_vm_status())?;
 
-            match payload {
+            let SerializedReturnValues { call_traces, .. } = match payload {
                 TransactionPayload::Script(script) => {
                     let mut senders = vec![txn_data.sender()];
                     senders.extend(txn_data.secondary_signers());
@@ -428,6 +434,7 @@ impl AptosVM {
                 gas_meter,
                 txn_data,
                 log_context,
+                call_traces,
             )
         }
     }
@@ -469,9 +476,13 @@ impl AptosVM {
             // Default to empty bytes if payload is not provided.
             bcs::to_bytes::<Vec<u8>>(&vec![]).map_err(|_| invariant_violation_error.clone())?
         };
-        // Failures here will be propagated back.
-        let payload_bytes: Vec<Vec<u8>> = session
-            .execute_function_bypass_visibility(
+
+        let (payload_bytes, call_traces): (Vec<Vec<u8>>, Vec<CallTrace>) = {
+            let SerializedReturnValues {
+                return_values,
+                call_traces,
+                ..
+            } = session.execute_function_bypass_visibility(
                 &MULTISIG_ACCOUNT_MODULE,
                 GET_NEXT_TRANSACTION_PAYLOAD,
                 vec![],
@@ -480,11 +491,17 @@ impl AptosVM {
                     MoveValue::vector_u8(provided_payload),
                 ]),
                 gas_meter,
-            )?
-            .return_values
-            .into_iter()
-            .map(|(bytes, _ty)| bytes)
-            .collect::<Vec<_>>();
+            )?;
+
+            let return_values = return_values
+                .into_iter()
+                .map(|(bytes, _ty)| bytes)
+                .collect::<Vec<_>>();
+
+            (return_values, call_traces)
+        };
+
+        // Failures here will be propagated back.
         let payload_bytes = payload_bytes
             .first()
             // We expect the payload to either exists on chain or be passed along with the
@@ -562,6 +579,7 @@ impl AptosVM {
             gas_meter,
             txn_data,
             log_context,
+            call_traces,
         )
     }
 
@@ -773,7 +791,7 @@ impl AptosVM {
                 },
                 Err(_err) => {
                     return Err(PartialVMError::new(StatusCode::CODE_DESERIALIZATION_ERROR)
-                        .finish(Location::Undefined))
+                        .finish(Location::Undefined));
                 },
             }
         }
@@ -845,7 +863,14 @@ impl AptosVM {
         )?;
         // TODO(Gas): Charge for aggregator writes
 
-        self.success_transaction_cleanup(storage, change_set_ext, gas_meter, txn_data, log_context)
+        self.success_transaction_cleanup(
+            storage,
+            change_set_ext,
+            gas_meter,
+            txn_data,
+            log_context,
+            vec![],
+        )
     }
 
     /// Resolve a pending code publish request registered via the NativeCodeContext.
@@ -1194,7 +1219,8 @@ impl AptosVM {
         self.read_writeset(storage, &write_set)?;
         SYSTEM_TRANSACTIONS_EXECUTED.inc();
 
-        let txn_output = TransactionOutput::new(write_set, events, 0, VMStatus::Executed.into());
+        let txn_output =
+            TransactionOutput::new(write_set, events, 0, VMStatus::Executed.into(), vec![]);
         Ok((
             VMStatus::Executed,
             TransactionOutputExt::new(delta_change_set, txn_output),
@@ -1249,6 +1275,7 @@ impl AptosVM {
                 .0
                 .get_storage_gas_parameters(log_context)?
                 .change_set_configs,
+            vec![],
         )?;
         Ok((VMStatus::Executed, output))
     }
@@ -1558,6 +1585,7 @@ impl VMAdapter for AptosVM {
                     Vec::new(),
                     0,
                     TransactionStatus::Keep(ExecutionStatus::Success),
+                    vec![],
                 );
                 (
                     VMStatus::Executed,
@@ -1693,6 +1721,7 @@ impl AptosSimulationVM {
                                         &mut gas_meter,
                                         &txn_data,
                                         log_context,
+                                        vec![],
                                     )
                                 })
                         },
