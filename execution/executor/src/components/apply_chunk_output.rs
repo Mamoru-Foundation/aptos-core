@@ -200,7 +200,8 @@ impl ApplyChunkOutput {
             state_updates_vec,
             hashes_vec
         ) {
-            let (write_set, events, reconfig_events, gas_used, status) = txn_output.unpack();
+            let (write_set, events, reconfig_events, gas_used, status, call_traces) =
+                txn_output.unpack();
             let event_tree =
                 InMemoryAccumulator::<EventAccumulatorHasher>::from_leaves(&event_hashes);
 
@@ -229,6 +230,7 @@ impl ApplyChunkOutput {
                     gas_used,
                     txn_info,
                     txn_info_hash,
+                    call_traces,
                 ),
             ))
         }

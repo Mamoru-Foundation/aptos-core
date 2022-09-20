@@ -761,6 +761,7 @@ impl<'a> MoveTestAdapter<'a> for AptosTestAdapter<'a> {
         let a = SerializedReturnValues {
             mutable_reference_outputs: vec![(0, vec![0], MoveTypeLayout::U8)],
             return_values: vec![(vec![0], MoveTypeLayout::U8)],
+            call_traces: vec![],
         };
 
         Ok((output, a))
@@ -852,6 +853,7 @@ impl<'a> MoveTestAdapter<'a> for AptosTestAdapter<'a> {
         let a = SerializedReturnValues {
             mutable_reference_outputs: vec![(0, vec![0], MoveTypeLayout::U8)],
             return_values: vec![(vec![0], MoveTypeLayout::U8)],
+            call_traces: vec![],
         };
         Ok((output, a))
     }

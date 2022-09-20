@@ -72,6 +72,7 @@ members = [
     "crates/fallible",
     "crates/indexer",
     "crates/inspection-service",
+    "crates/mamoru-aptos-sniffer",
     "crates/moving-average",
     "crates/node-resource-metrics",
     "crates/num-variants",
@@ -320,7 +321,7 @@ blake2 = "0.10.4"
 blake2-rfc = "0.2.18"
 blst = "0.3.7"
 byteorder = "1.4.3"
-bytes = "1.1.0"
+bytes = "1.4.0"
 chrono = { version = "0.4.19", features = ["clock", "serde"] }
 cfg-if = "1.0.0"
 claims = "0.7"
@@ -336,7 +337,7 @@ crossbeam = "0.8.1"
 crossbeam-channel = "0.5.4"
 crossbeam-queue = "0.3.5"
 curve25519-dalek = "3"
-dashmap = "5.2.0"
+dashmap = "5"
 datatest-stable = "0.1.1"
 debug-ignore = { version = "1.0.3", features = ["serde"] }
 derivative = "2.2.0"
@@ -484,38 +485,38 @@ walkdir = "2.3.2"
 warp = { version = "0.3.2", features = ["tls"] }
 warp-reverse-proxy = "0.5.0"
 which = "4.2.5"
-x25519-dalek = "1.2.0"
+x25519-dalek = { git = "https://github.com/Mamoru-Foundation/x25519-dalek", rev = "f628ef57dfec64241f30c571f210a46454fa1720" }
 
 # Note: the BEGIN and END comments below are required for external tooling. Do not remove.
 # BEGIN MOVE DEPENDENCIES
-move-abigen = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-binary-format = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-bytecode-verifier = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-bytecode-utils = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-cli = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-command-line-common = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-compiler ={ git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-core-types = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af", features = ["address32"] }
-move-docgen = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-ir-compiler = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-model = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-package = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-prover = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-prover-boogie-backend = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-stackless-bytecode = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-prover-test-utils = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-resource-viewer = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-stackless-bytecode-interpreter = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-stdlib = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-symbol-pool = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-table-extension = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-transactional-test-runner = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-move-unit-test = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af", features = ["table-extension"] }
-move-vm-runtime = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af", features = ["lazy_natives"] }
-move-vm-test-utils = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af", features = ["table-extension"] }
-move-vm-types = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-read-write-set = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
-read-write-set-dynamic = { git = "https://github.com/move-language/move", rev = "d24f133e84c69bccba50c403ef5f1b9c08fe11af" }
+move-abigen = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-binary-format = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-bytecode-verifier = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-bytecode-utils = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-cli = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-command-line-common = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-compiler = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-core-types = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654", features = ["address32"] }
+move-docgen = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-ir-compiler = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-model = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-package = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-prover = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-prover-boogie-backend = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-stackless-bytecode = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-prover-test-utils = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-resource-viewer = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-stackless-bytecode-interpreter = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-stdlib = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-symbol-pool = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-table-extension = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-transactional-test-runner = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+move-unit-test = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654", features = ["table-extension"] }
+move-vm-runtime = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654", features = ["lazy_natives"] }
+move-vm-test-utils = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654", features = ["table-extension"] }
+move-vm-types = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+read-write-set = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
+read-write-set-dynamic = { git = "https://github.com/Mamoru-Foundation/move", rev = "a1703ddd02b313a93de07b4ae87a1a2e265fd654" }
 # END MOVE DEPENDENCIES
 
 [profile.release]

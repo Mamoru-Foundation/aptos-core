@@ -67,7 +67,7 @@ fn test_mock_vm_different_senders() {
                 ),
             ]
             .into_iter()
-            .collect()
+            .collect::<BTreeMap<_, _>>()
         );
     }
 }
@@ -102,7 +102,7 @@ fn test_mock_vm_same_sender() {
                 ),
             ]
             .into_iter()
-            .collect()
+            .collect::<BTreeMap<_, _>>()
         );
     }
 }
@@ -144,6 +144,6 @@ fn test_mock_vm_payment() {
             ),
         ]
         .into_iter()
-        .collect()
+        .collect::<BTreeMap<_, _>>()
     );
 }

@@ -131,5 +131,6 @@ pub(crate) fn discard_error_output(err: StatusCode) -> TransactionOutputExt {
         vec![],
         0,
         TransactionStatus::Discard(err),
+        vec![],
     ))
 }

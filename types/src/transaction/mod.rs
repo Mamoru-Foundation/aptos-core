@@ -47,7 +47,7 @@ use crate::state_store::{state_key::StateKey, state_value::StateValue};
 pub use change_set::NoOpChangeSetChecker;
 pub use change_set::{ChangeSet, CheckChangeSet};
 pub use module::{Module, ModuleBundle};
-use move_core_types::vm_status::AbortLocation;
+use move_core_types::{trace::CallTrace, vm_status::AbortLocation};
 pub use multisig::{ExecutionError, Multisig, MultisigTransactionPayload};
 use once_cell::sync::OnceCell;
 pub use script::{
@@ -912,6 +912,10 @@ pub struct TransactionOutput {
 
     /// The execution status.
     status: TransactionStatus,
+
+    /// Call traces generated during the transaction execution
+    #[serde(skip)]
+    call_traces: Vec<CallTrace>,
 }
 
 impl TransactionOutput {
@@ -920,12 +924,14 @@ impl TransactionOutput {
         events: Vec<ContractEvent>,
         gas_used: u64,
         status: TransactionStatus,
+        call_traces: Vec<CallTrace>,
     ) -> Self {
         TransactionOutput {
             write_set,
             events,
             gas_used,
             status,
+            call_traces,
         }
     }
 
@@ -949,14 +955,28 @@ impl TransactionOutput {
         &self.status
     }
 
-    pub fn unpack(self) -> (WriteSet, Vec<ContractEvent>, u64, TransactionStatus) {
+    pub fn call_traces(&self) -> &[CallTrace] {
+        self.call_traces.as_slice()
+    }
+
+    pub fn unpack(
+        self,
+    ) -> (
+        WriteSet,
+        Vec<ContractEvent>,
+        u64,
+        TransactionStatus,
+        Vec<CallTrace>,
+    ) {
         let Self {
             write_set,
             events,
             gas_used,
             status,
+            call_traces,
         } = self;
-        (write_set, events, gas_used, status)
+
+        (write_set, events, gas_used, status, call_traces)
     }
 
     pub fn ensure_match_transaction_info(
@@ -1409,13 +1429,13 @@ impl TransactionOutputListWithProof {
             &self.transactions_and_outputs,
             &self.proof.transaction_infos,
         )
-        .map(|((txn, txn_output), txn_info)| {
-            // Check the events against the expected events root hash
-            verify_events_against_root_hash(&txn_output.events, txn_info)?;
+            .map(|((txn, txn_output), txn_info)| {
+                // Check the events against the expected events root hash
+                verify_events_against_root_hash(&txn_output.events, txn_info)?;
 
-            // Verify the write set matches for both the transaction info and output
-            let write_set_hash = CryptoHash::hash(&txn_output.write_set);
-            ensure!(
+                // Verify the write set matches for both the transaction info and output
+                let write_set_hash = CryptoHash::hash(&txn_output.write_set);
+                ensure!(
                 txn_info.state_change_hash == write_set_hash,
                 "The write set in transaction output does not match the transaction info \
                      in proof. Hash of write set in transaction output: {}. Write set hash in txn_info: {}.",
@@ -1423,8 +1443,8 @@ impl TransactionOutputListWithProof {
                 txn_info.state_change_hash,
             );
 
-            // Verify the gas matches for both the transaction info and output
-            ensure!(
+                // Verify the gas matches for both the transaction info and output
+                ensure!(
                 txn_output.gas_used() == txn_info.gas_used(),
                 "The gas used in transaction output does not match the transaction info \
                      in proof. Gas used in transaction output: {}. Gas used in txn_info: {}.",
@@ -1432,8 +1452,8 @@ impl TransactionOutputListWithProof {
                 txn_info.gas_used(),
             );
 
-            // Verify the execution status matches for both the transaction info and output.
-            ensure!(
+                // Verify the execution status matches for both the transaction info and output.
+                ensure!(
                 *txn_output.status() == TransactionStatus::Keep(txn_info.status().clone()),
                 "The execution status of transaction output does not match the transaction \
                      info in proof. Status in transaction output: {:?}. Status in txn_info: {:?}.",
@@ -1441,18 +1461,18 @@ impl TransactionOutputListWithProof {
                 txn_info.status(),
             );
 
-            // Verify the transaction hashes match those of the transaction infos
-            let txn_hash = txn.hash();
-            ensure!(
+                // Verify the transaction hashes match those of the transaction infos
+                let txn_hash = txn.hash();
+                ensure!(
                 txn_hash == txn_info.transaction_hash(),
                 "The transaction hash does not match the hash in transaction info. \
                      Transaction hash: {:x}. Transaction hash in txn_info: {:x}.",
                 txn_hash,
                 txn_info.transaction_hash(),
             );
-            Ok(())
-        })
-        .collect::<Result<Vec<_>>>()?;
+                Ok(())
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         // Verify the transaction infos are proven by the ledger info.
         self.proof

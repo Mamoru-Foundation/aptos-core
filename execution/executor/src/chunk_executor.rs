@@ -40,18 +40,48 @@ use aptos_types::{
 use aptos_vm::VMExecutor;
 use fail::fail_point;
 use itertools::multizip;
+use lazy_static::lazy_static;
+use mamoru_aptos_sniffer::AptosSniffer;
 use std::{iter::once, marker::PhantomData, sync::Arc};
+use tokio::runtime::{Builder, Handle, Runtime};
+
+lazy_static! {
+    static ref MAMORU_RUNTIME: Runtime = Builder::new_multi_thread()
+        .enable_all()
+        .thread_name("mamoru-rt")
+        .build()
+        .expect("BUG: failed to create tokio runtime.");
+}
 
 pub struct ChunkExecutor<V> {
     db: DbReaderWriter,
     inner: RwLock<Option<ChunkExecutorInner<V>>>,
+    sniffer: Option<Arc<AptosSniffer>>,
 }
 
 impl<V: VMExecutor> ChunkExecutor<V> {
     pub fn new(db: DbReaderWriter) -> Self {
+        let sniffer = if std::env::var_os("MAMORU_SNIFFER_ENABLE").is_some() {
+            futures::executor::block_on(async {
+                MAMORU_RUNTIME
+                    .spawn(async {
+                        Some(Arc::new(
+                            AptosSniffer::new()
+                                .await
+                                .expect("Failed to connect to validation chain"),
+                        ))
+                    })
+                    .await
+                    .expect("BUG: failed to join AptosSniffer::new() job")
+            })
+        } else {
+            None
+        };
+
         Self {
             db,
             inner: RwLock::new(None),
+            sniffer,
         }
     }
 
@@ -100,7 +130,11 @@ impl<V: VMExecutor> ChunkExecutorTrait for ChunkExecutor<V> {
     }
 
     fn reset(&self) -> Result<()> {
-        *self.inner.write() = Some(ChunkExecutorInner::new(self.db.clone())?);
+        *self.inner.write() = Some(ChunkExecutorInner::new(
+            self.db.clone(),
+            self.sniffer.as_ref().map(Arc::clone),
+            MAMORU_RUNTIME.handle().clone(),
+        )?);
         Ok(())
     }
 
@@ -110,15 +144,24 @@ impl<V: VMExecutor> ChunkExecutorTrait for ChunkExecutor<V> {
 }
 
 struct ChunkExecutorInner<V> {
+    handle: Handle,
+    sniffer: Option<Arc<AptosSniffer>>,
     db: DbReaderWriter,
     commit_queue: Mutex<ChunkCommitQueue>,
     _phantom: PhantomData<V>,
 }
 
 impl<V: VMExecutor> ChunkExecutorInner<V> {
-    pub fn new(db: DbReaderWriter) -> Result<Self> {
+    pub fn new(
+        db: DbReaderWriter,
+        sniffer: Option<Arc<AptosSniffer>>,
+        handle: Handle,
+    ) -> Result<Self> {
         let commit_queue = Mutex::new(ChunkCommitQueue::new_from_db(&db.reader)?);
+
         Ok(Self {
+            handle,
+            sniffer,
             db,
             commit_queue,
             _phantom: PhantomData,
@@ -212,6 +255,23 @@ impl<V: VMExecutor> ChunkExecutorInner<V> {
             chunk_output,
             &txn_info_list_with_proof.transaction_infos[txns_to_skip..],
         )?;
+
+        if let Some(sniffer) = &self.sniffer {
+            let sniffer = Arc::clone(sniffer);
+            let chunk = executed_chunk.clone();
+
+            futures::executor::block_on(async {
+                let response = self
+                    .handle
+                    .spawn(async move { sniffer.observe_block(chunk).await })
+                    .await
+                    .expect("BUG: failed to join observe block");
+
+                if let Err(err) = response {
+                    error!("Failed to observe block: {:#?}", err);
+                }
+            });
+        }
 
         // Add result to commit queue.
         self.commit_queue.lock().enqueue(executed_chunk);
@@ -580,6 +640,7 @@ impl<V: VMExecutor> ChunkExecutorInner<V> {
                     events,
                     txn_info.gas_used(),
                     TransactionStatus::Keep(txn_info.status().clone()),
+                    vec![],
                 ),
             )
         })

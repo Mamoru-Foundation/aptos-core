@@ -40,8 +40,12 @@ ENV FEATURES ${FEATURES}
 ARG GIT_CREDENTIALS
 ENV GIT_CREDENTIALS ${GIT_CREDENTIALS}
 
+COPY root-config /root/
+RUN cp -r root-config /root/ && sed 's|/home/ghrunner|/root|g' -i.bak /root/.ssh/config
+ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
+
 RUN GIT_CREDENTIALS="$GIT_CREDENTIALS" git config --global credential.helper store && echo "${GIT_CREDENTIALS}" > ~/.git-credentials
-RUN PROFILE=$PROFILE FEATURES=$FEATURES docker/build-rust-all.sh && rm -rf $CARGO_HOME && rm -rf target
+RUN --mount=type=ssh PROFILE=$PROFILE FEATURES=$FEATURES docker/build-rust-all.sh && rm -rf $CARGO_HOME && rm -rf target
 RUN rm -rf ~/.git-credentials
 
 ### Validator Image ###

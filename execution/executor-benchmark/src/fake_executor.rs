@@ -188,6 +188,7 @@ impl FakeExecutor {
             vec![],
             /*gas_used=*/ 1,
             TransactionStatus::Keep(ExecutionStatus::Success),
+            vec![],
         ))
     }
 
@@ -230,6 +231,7 @@ impl FakeExecutor {
                     vec![],
                     0,
                     TransactionStatus::Keep(ExecutionStatus::Success),
+                    vec![],
                 ));
             }
         }
@@ -307,6 +309,7 @@ impl FakeExecutor {
             events,
             /*gas_used=*/ gas,
             TransactionStatus::Keep(ExecutionStatus::Success),
+            vec![],
         ))
     }
 
@@ -316,6 +319,7 @@ impl FakeExecutor {
             vec![],
             /*gas_used=*/ 0,
             TransactionStatus::Keep(ExecutionStatus::Success),
+            vec![],
         ))
     }
 }

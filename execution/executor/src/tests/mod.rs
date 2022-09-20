@@ -407,6 +407,7 @@ fn apply_transaction_by_writeset(
                     vec![],
                     0,
                     TransactionStatus::Keep(ExecutionStatus::MiscellaneousError(None)),
+                    vec![],
                 ),
             )
         })
@@ -417,6 +418,7 @@ fn apply_transaction_by_writeset(
                 Vec::new(),
                 0,
                 TransactionStatus::Keep(ExecutionStatus::Success),
+                vec![],
             ),
         )))
         .collect();
