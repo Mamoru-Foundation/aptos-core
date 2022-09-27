@@ -38,8 +38,13 @@ module "eks" {
   num_extra_instance          = var.num_extra_instance
 }
 
+locals {
+  oidc_provider = module.eks.oidc_provider
+}
+
 data "aws_eks_cluster" "aptos" {
-  name = "aptos-pfn-${terraform.workspace}"
+  name       = "aptos-pfn-${terraform.workspace}"
+  depends_on = [module.eks]
 }
 
 data "aws_eks_cluster_auth" "aptos" {

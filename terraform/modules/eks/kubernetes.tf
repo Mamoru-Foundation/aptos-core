@@ -44,6 +44,77 @@ resource "kubernetes_storage_class" "gp2" {
   depends_on = [null_resource.delete-gp2]
 }
 
+resource "aws_iam_openid_connect_provider" "cluster" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = ["9e99a48a9960b14926bb7f3b02e22da2b0ab7280"] # Thumbprint of Root CA for EKS OIDC, Valid until 2037
+  url             = aws_eks_cluster.aptos.identity[0].oidc[0].issuer
+}
+
+locals {
+  oidc_provider = replace(aws_iam_openid_connect_provider.cluster.url, "https://", "")
+}
+
+# EBS CSI ADDON
+
+data "aws_iam_policy_document" "aws-ebs-csi-driver-trust-policy" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type = "Federated"
+      identifiers = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.oidc_provider}"
+      ]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_provider}:sub"
+      values   = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_provider}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "aws-ebs-csi-driver" {
+  name                 = "aptos-${local.workspace_name}-ebs-csi-controller"
+  path                 = var.iam_path
+  permissions_boundary = var.permissions_boundary_policy
+  assume_role_policy   = data.aws_iam_policy_document.aws-ebs-csi-driver-trust-policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "caws-ebs-csi-driver" {
+  role = aws_iam_role.aws-ebs-csi-driver.name
+  # From this reference: https://docs.aws.amazon.com/eks/latest/userguide/csi-iam-role.html
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+}
+
+resource "aws_eks_addon" "aws-ebs-csi-driver" {
+  cluster_name             = aws_eks_cluster.aptos.name
+  addon_name               = "aws-ebs-csi-driver"
+  service_account_role_arn = aws_iam_role.aws-ebs-csi-driver.arn
+}
+
+
+resource "kubernetes_storage_class" "gp3" {
+  metadata {
+    name = "gp3"
+  }
+  storage_provisioner = "ebs.csi.aws.com"
+  volume_binding_mode = "WaitForFirstConsumer"
+  parameters = {
+    type = "gp3"
+  }
+
+  depends_on = [null_resource.delete-gp2, aws_eks_addon.aws-ebs-csi-driver]
+}
+
+
 resource "kubernetes_role_binding" "psp-kube-system" {
   metadata {
     name      = "eks:podsecuritypolicy:privileged"
