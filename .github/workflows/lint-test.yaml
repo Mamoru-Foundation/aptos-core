@@ -69,3 +69,26 @@ jobs:
             /tmp/.tmp*
             !/tmp/.tmp*/**/db/
           retention-days: 1
+
+  slack-notify:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs:
+      - rust-lint
+      - rust-doc-test
+      - rust-unit-test
+      - rust-smoke-test
+    steps:
+    - uses: slackapi/slack-github-action@v1.22.0
+      with:
+        payload: |
+          
+          {
+            "lint_conclusion": ${{ steps.rust-lint.conclusion == "success" && "✅" || "❌" }},
+            "doc_conclusion": ${{ steps.rust-doc-test.conclusion == "success" && "✅" || "❌" }},
+            "unit_conclusion": ${{ steps.rust-unit-test.conclusion == "success" && "✅" || "❌" }},
+            "smoke_conclusion": ${{ steps.rust-smoke-test.conclusion == "success" && "✅" || "❌" }},
+            "run_link": ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
