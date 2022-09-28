@@ -30,10 +30,10 @@ jobs:
           payload: |
             
             {
-              "lint_conclusion": "${{ jobs.rust-lint.conclusion }}",
-              "doc_conclusion":  "${{ jobs.rust-lint.conclusion }}",
-              "unit_conclusion":  "${{ jobs.rust-lint.conclusion }}",
-              "smoke_conclusion":  "${{ jobs.rust-lint.conclusion }}",
+              "lint_conclusion": "${{ needs.rust-lint.result }}",
+              "doc_conclusion":  "${{ needs.rust-lint.result }}",
+              "unit_conclusion":  "${{ needs.rust-lint.result }}",
+              "smoke_conclusion":  "${{ needs.rust-lint.result }}",
               "run_link": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             }
         env:
