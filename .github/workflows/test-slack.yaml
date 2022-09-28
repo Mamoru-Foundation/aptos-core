@@ -1,0 +1,44 @@
+name: "Lint+Test"
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - devnet
+
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_TERM_COLOR: always
+  CARGO_BUILD_JOBS: 16 # limit cargo jobs to by a single job
+
+# cancel redundant builds
+concurrency:
+  # cancel redundant builds on PRs (only on PR, not on branches)
+  group: ${{ github.workflow }}-${{ (github.event_name == 'pull_request' && github.ref) || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  rust-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "ok"
+
+  slack-notify:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs:
+      - rust-lint
+    steps:
+      - uses: slackapi/slack-github-action@v1.22.0
+        with:
+          payload: |
+            
+            {
+              "lint_conclusion": "${{ steps.rust-lint.conclusion }}",
+              "doc_conclusion":  "${{ steps.rust-lint.conclusion }}",
+              "unit_conclusion":  "${{ steps.rust-lint.conclusion }}",
+              "smoke_conclusion":  "${{ steps.rust-lint.conclusion }}",
+              "run_link": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
