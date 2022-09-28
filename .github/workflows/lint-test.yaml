@@ -84,10 +84,10 @@ jobs:
         payload: |
           
           {
-            "lint_conclusion": "${{ steps.rust-lint.conclusion == 'success' && '✅' || '❌' }}",
-            "doc_conclusion": "${{ steps.rust-doc-test.conclusion == 'success' && '✅' || '❌' }}",
-            "unit_conclusion": "${{ steps.rust-unit-test.conclusion == 'success' && '✅' || '❌' }}",
-            "smoke_conclusion": "${{ steps.rust-smoke-test.conclusion == 'success' && '✅' || '❌' }}",
+            "lint_conclusion": "${{ needs.rust-lint.result == 'success' && '✅' || '❌' }}",
+            "doc_conclusion": "${{ needs.rust-doc-test.result == 'success' && '✅' || '❌' }}",
+            "unit_conclusion": "${{ needs.rust-unit-test.result == 'success' && '✅' || '❌' }}",
+            "smoke_conclusion": "${{ needs.rust-smoke-test.result == 'success' && '✅' || '❌' }}",
             "run_link": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           }
       env:
