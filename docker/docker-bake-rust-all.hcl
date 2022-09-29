@@ -49,6 +49,9 @@ variable "FEATURES" {
   // Cargo features to enable, as a comma separated string
 }
 
+variable "TARGET_IMAGE_NAME" {}
+variable "TARGET_IMAGE_TAG" {}
+
 group "all" {
   targets = flatten([
     "validator",
@@ -145,11 +148,11 @@ target "telemetry-service" {
 
 function "generate_cache_from" {
   params = [target]
-  result = CI == "true" ? [
+  result = TARGET_IMAGE_NAME != "" ? ["type=registry,ref=${TARGET_IMAGE_NAME}:latest"] : (CI == "true" ? [
     "type=registry,ref=${GCP_DOCKER_ARTIFACT_REPO}/${target}:cache-${IMAGE_TAG_PREFIX}main",
     "type=registry,ref=${GCP_DOCKER_ARTIFACT_REPO}/${target}:cache-${IMAGE_TAG_PREFIX}${NORMALIZED_GIT_BRANCH_OR_PR}",
     "type=registry,ref=${GCP_DOCKER_ARTIFACT_REPO}/${target}:cache-${IMAGE_TAG_PREFIX}${GIT_SHA}",
-  ] : []
+  ] : [])
 }
 
 ## we only cache to GCP because AWS ECR doesn't support cache manifests
@@ -160,12 +163,12 @@ function "generate_cache_to" {
 
 function "generate_tags" {
   params = [target]
-  result = TARGET_REGISTRY == "remote" ? [
+  result = TARGET_IMAGE_NAME != "" ? ["${TARGET_IMAGE_NAME}:${TARGET_IMAGE_TAG}", "${TARGET_IMAGE_NAME}:latest"] : (TARGET_REGISTRY == "remote" ? [
     "${GCP_DOCKER_ARTIFACT_REPO}/${target}:${IMAGE_TAG_PREFIX}${GIT_SHA}",
     "${GCP_DOCKER_ARTIFACT_REPO}/${target}:${IMAGE_TAG_PREFIX}${NORMALIZED_GIT_BRANCH_OR_PR}",
     "${ecr_base}/${target}:${IMAGE_TAG_PREFIX}${GIT_SHA}",
-    ] : [
+  ] : [
     "aptos-core/${target}:${IMAGE_TAG_PREFIX}${GIT_SHA}-from-local",
     "aptos-core/${target}:${IMAGE_TAG_PREFIX}from-local",
-  ]
+  ])
 }
