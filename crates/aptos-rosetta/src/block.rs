@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::common::{BlockHash, Y2K_MS};
-use crate::types::BlockMetadata;
 use crate::{
     common::{
         check_network, get_block_index_from_request, get_timestamp, handle_request, with_context,
@@ -87,8 +86,7 @@ async fn build_block(
     // TODO: Parallelize these and then sort at end
     if let Some(txns) = block.transactions {
         for txn in txns {
-            let transaction =
-                Transaction::from_transaction(server_context.coin_cache.clone(), txn).await?;
+            let transaction = Transaction::from_transaction(server_context, txn).await?;
             if keep_empty_transactions || !transaction.operations.is_empty() {
                 transactions.push(transaction)
             }
@@ -103,10 +101,6 @@ async fn build_block(
         parent_block_identifier,
         timestamp,
         transactions,
-        metadata: Some(BlockMetadata {
-            first_version: block.first_version.into(),
-            last_version: block.last_version.into(),
-        }),
     })
 }
 
@@ -164,18 +158,15 @@ impl BlockInfo {
 /// A cache of [`BlockInfo`] to allow us to keep track of the block boundaries
 #[derive(Debug)]
 pub struct BlockRetriever {
+    page_size: u16,
     rest_client: Arc<aptos_rest_client::Client>,
-    synthetic_block_size: Option<u16>,
 }
 
 impl BlockRetriever {
-    pub fn new(
-        rest_client: Arc<aptos_rest_client::Client>,
-        synthetic_block_size: Option<u16>,
-    ) -> Self {
+    pub fn new(page_size: u16, rest_client: Arc<aptos_rest_client::Client>) -> Self {
         BlockRetriever {
+            page_size,
             rest_client,
-            synthetic_block_size,
         }
     }
 
@@ -205,38 +196,16 @@ impl BlockRetriever {
         height: u64,
         with_transactions: bool,
     ) -> ApiResult<aptos_rest_client::aptos_api_types::BcsBlock> {
-        // Let's do some magic if there's a synthetic block size
-        if let Some(synthetic_block_size) = self.synthetic_block_size {
-            // Synthetic blocks have some problems around block time, and other pieces, but
-            // they are a tradeoff of performance when blocks are mostly empty
-            let first_version = synthetic_block_size as u64 * height;
-            let last_version = (synthetic_block_size as u64 * (height + 1)) - 1;
-            let mut block = self
+        if with_transactions {
+            Ok(self
                 .rest_client
-                .get_block_by_version_bcs(last_version, false)
+                .get_full_block_by_height_bcs(height, self.page_size)
                 .await?
-                .into_inner();
-
-            // We have to hack the block into the correct bounds
-            // Hash doesn't matter and timestamp is the last transaction's block
-            block.first_version = first_version;
-            block.last_version = last_version;
-            block.block_height = height;
-
-            // If we need the transactions, append them to the block info
-            if with_transactions {
-                let transactions = self
-                    .rest_client
-                    .get_transactions_bcs(Some(first_version), Some(synthetic_block_size))
-                    .await?
-                    .into_inner();
-                block.transactions = Some(transactions);
-            }
-            Ok(block)
+                .into_inner())
         } else {
             Ok(self
                 .rest_client
-                .get_block_by_height_bcs(height, with_transactions)
+                .get_block_by_height_bcs(height, false)
                 .await?
                 .into_inner())
         }

@@ -5,7 +5,7 @@ use crate::core_mempool::{CoreMempool, TimelineState, TxnPointer};
 use crate::network::MempoolSyncMsg;
 use anyhow::{format_err, Result};
 use aptos_compression::metrics::CompressionClient;
-use aptos_config::config::NodeConfig;
+use aptos_config::config::{NodeConfig, MAX_APPLICATION_MESSAGE_SIZE};
 use aptos_crypto::{ed25519::Ed25519PrivateKey, PrivateKey, Uniform};
 use aptos_types::{
     account_address::AccountAddress,
@@ -178,17 +178,15 @@ impl ConsensusMock {
     }
 }
 
-pub(crate) fn exist_in_metrics_cache(mempool: &CoreMempool, txn: &SignedTransaction) -> bool {
-    mempool
-        .metrics_cache
-        .get(&(txn.sender(), txn.sequence_number()))
-        .is_some()
-}
-
 /// Decompresses and deserializes the raw message bytes into a message struct
 pub fn decompress_and_deserialize(message_bytes: &Vec<u8>) -> MempoolSyncMsg {
     bcs::from_bytes(
-        &aptos_compression::decompress(message_bytes, CompressionClient::Mempool).unwrap(),
+        &aptos_compression::decompress(
+            message_bytes,
+            CompressionClient::Mempool,
+            MAX_APPLICATION_MESSAGE_SIZE,
+        )
+        .unwrap(),
     )
     .unwrap()
 }

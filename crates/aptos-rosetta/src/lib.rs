@@ -5,14 +5,14 @@
 //!
 //! [Rosetta API Spec](https://www.rosetta-api.org/docs/Reference.html)
 
+use crate::types::Store;
 use crate::{
-    account::CoinCache,
     block::BlockRetriever,
     common::{handle_request, with_context},
     error::{ApiError, ApiResult},
 };
 use aptos_config::config::ApiConfig;
-use aptos_logger::debug;
+use aptos_logger::{debug, warn};
 use aptos_types::{account_address::AccountAddress, chain_id::ChainId};
 use aptos_warp_webserver::{logger, Error, WebServer};
 use std::{
@@ -23,7 +23,7 @@ use std::{
         Arc,
     },
 };
-use tokio::{sync::Mutex, task::JoinHandle};
+use tokio::task::JoinHandle;
 use warp::{
     http::{HeaderValue, Method, StatusCode},
     reply, Filter, Rejection, Reply,
@@ -42,8 +42,6 @@ pub mod types;
 pub const NODE_VERSION: &str = "0.1";
 pub const ROSETTA_VERSION: &str = "1.4.12";
 
-type SequenceNumber = u64;
-
 /// Rosetta API context for use on all APIs
 #[derive(Clone, Debug)]
 pub struct RosettaContext {
@@ -51,18 +49,54 @@ pub struct RosettaContext {
     rest_client: Option<Arc<aptos_rest_client::Client>>,
     /// ChainId of the chain to connect to
     pub chain_id: ChainId,
-    /// Coin cache for looking up Currency details
-    pub coin_cache: Arc<CoinCache>,
     /// Block index cache
     pub block_cache: Option<Arc<BlockRetriever>>,
-
-    /// If using synthetic blocks, this will be the block size
-    pub synthetic_block_size: Option<u16>,
-
-    pub accounts: Arc<Mutex<BTreeMap<AccountAddress, SequenceNumber>>>,
+    pub owner_addresses: Vec<AccountAddress>,
+    pub pool_address_to_owner: BTreeMap<AccountAddress, AccountAddress>,
 }
 
 impl RosettaContext {
+    pub async fn new(
+        rest_client: Option<Arc<aptos_rest_client::Client>>,
+        chain_id: ChainId,
+        block_cache: Option<Arc<BlockRetriever>>,
+        owner_addresses: Vec<AccountAddress>,
+    ) -> Self {
+        let mut pool_address_to_owner = BTreeMap::new();
+        if let Some(ref rest_client) = rest_client {
+            // We have to now fill in all of the mappings of owner to pool address
+            for owner_address in owner_addresses.iter() {
+                if let Ok(store) = rest_client
+                    .get_account_resource_bcs::<Store>(
+                        *owner_address,
+                        "0x1::staking_contract::Store",
+                    )
+                    .await
+                {
+                    let store = store.into_inner();
+                    let pool_addresses: Vec<_> = store
+                        .staking_contracts
+                        .iter()
+                        .map(|(_operator, pool)| pool.pool_address)
+                        .collect();
+                    for pool_address in pool_addresses {
+                        pool_address_to_owner.insert(pool_address, *owner_address);
+                    }
+                } else {
+                    warn!("Did not find a pool for owner: {}", owner_address);
+                }
+            }
+        }
+
+        RosettaContext {
+            rest_client,
+            chain_id,
+            block_cache,
+            owner_addresses,
+            pool_address_to_owner,
+        }
+    }
+
     fn rest_client(&self) -> ApiResult<Arc<aptos_rest_client::Client>> {
         if let Some(ref client) = self.rest_client {
             Ok(client.clone())
@@ -85,7 +119,7 @@ pub fn bootstrap(
     chain_id: ChainId,
     api_config: ApiConfig,
     rest_client: Option<aptos_rest_client::Client>,
-    synthetic_block_size: Option<u16>,
+    owner_addresses: Vec<AccountAddress>,
 ) -> anyhow::Result<tokio::runtime::Runtime> {
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .thread_name_fn(|| {
@@ -104,7 +138,7 @@ pub fn bootstrap(
         chain_id,
         api_config,
         rest_client,
-        synthetic_block_size,
+        owner_addresses,
     ));
     Ok(runtime)
 }
@@ -114,7 +148,7 @@ pub async fn bootstrap_async(
     chain_id: ChainId,
     api_config: ApiConfig,
     rest_client: Option<aptos_rest_client::Client>,
-    synthetic_block_size: Option<u16>,
+    owner_addresses: Vec<AccountAddress>,
 ) -> anyhow::Result<JoinHandle<()>> {
     debug!("Starting up Rosetta server with {:?}", api_config);
 
@@ -124,36 +158,26 @@ pub async fn bootstrap_async(
             client
                 .get_ledger_information()
                 .await
-                .expect("Should successfully get ledger information from Rest API")
+                .expect("Should successfully get ledger information from Rest API on bootstap")
                 .into_inner()
                 .chain_id,
             "Failed to match Rosetta chain Id to upstream server"
         );
     }
 
-    if matches!(synthetic_block_size, Some(0)) {
-        panic!("Cannot have a synthetic block size of 0");
-    }
-
-    let api = WebServer::from(api_config);
+    let api = WebServer::from(api_config.clone());
     let handle = tokio::spawn(async move {
         // If it's Online mode, add the block cache
         let rest_client = rest_client.map(Arc::new);
         let block_cache = rest_client.as_ref().map(|rest_client| {
             Arc::new(BlockRetriever::new(
+                api_config.max_transactions_page_size,
                 rest_client.clone(),
-                synthetic_block_size,
             ))
         });
 
-        let context = RosettaContext {
-            rest_client: rest_client.clone(),
-            chain_id,
-            coin_cache: Arc::new(CoinCache::new(rest_client.clone())),
-            block_cache,
-            accounts: Arc::new(Mutex::new(BTreeMap::new())),
-            synthetic_block_size,
-        };
+        let context =
+            RosettaContext::new(rest_client.clone(), chain_id, block_cache, owner_addresses).await;
         api.serve(routes(context)).await;
     });
     Ok(handle)

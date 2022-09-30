@@ -18,7 +18,7 @@ use std::{
     path::Path,
     str::FromStr,
 };
-use vm_genesis::Validator;
+use vm_genesis::{Validator, ValidatorWithCommissionRate};
 
 /// Template for setting up Github for Genesis
 ///
@@ -104,13 +104,17 @@ pub struct ValidatorConfiguration {
     pub voter_account_address: AccountAddress,
     pub voter_account_public_key: Ed25519PublicKey,
     /// Key used for signing in consensus
-    pub consensus_public_key: bls12381::PublicKey,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub consensus_public_key: Option<bls12381::PublicKey>,
     /// Corresponding proof of possession of consensus public key
-    pub proof_of_possession: bls12381::ProofOfPossession,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proof_of_possession: Option<bls12381::ProofOfPossession>,
     /// Public key used for validator network identity (same as account address)
-    pub validator_network_public_key: x25519::PublicKey,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub validator_network_public_key: Option<x25519::PublicKey>,
     /// Host for validator which can be an IP or a DNS name
-    pub validator_host: HostAndPort,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub validator_host: Option<HostAndPort>,
     /// Public key used for full node network identity (same as account address)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub full_node_network_public_key: Option<x25519::PublicKey>,
@@ -119,16 +123,46 @@ pub struct ValidatorConfiguration {
     pub full_node_host: Option<HostAndPort>,
     /// Stake amount for consensus
     pub stake_amount: u64,
+    /// Commission percentage for validator
+    pub commission_percentage: u64,
+    /// Whether the validator should be joining the validator set during genesis.
+    /// If set to false, the validator will be fully initialized but won't be added to the
+    /// validator set.
+    pub join_during_genesis: bool,
+}
+
+impl TryFrom<ValidatorConfiguration> for ValidatorWithCommissionRate {
+    type Error = anyhow::Error;
+
+    fn try_from(config: ValidatorConfiguration) -> Result<Self, Self::Error> {
+        let validator_commission_percentage = config.commission_percentage;
+        let join_during_genesis = config.join_during_genesis;
+        Ok(ValidatorWithCommissionRate {
+            validator: config.try_into()?,
+            validator_commission_percentage,
+            join_during_genesis,
+        })
+    }
 }
 
 impl TryFrom<ValidatorConfiguration> for Validator {
     type Error = anyhow::Error;
 
     fn try_from(config: ValidatorConfiguration) -> Result<Self, Self::Error> {
-        let validator_addresses = vec![config
-            .validator_host
-            .as_network_address(config.validator_network_public_key)
-            .unwrap()];
+        let validator_addresses = if let Some(validator_host) = config.validator_host {
+            if let Some(validator_network_public_key) = config.validator_network_public_key {
+                vec![validator_host
+                    .as_network_address(validator_network_public_key)
+                    .unwrap()]
+            } else {
+                return Err(anyhow::Error::msg(
+                    "Validator addresses specified, but not validator network key",
+                ));
+            }
+        } else {
+            vec![]
+        };
+
         let full_node_addresses = if let Some(full_node_host) = config.full_node_host {
             if let Some(full_node_network_key) = config.full_node_network_public_key {
                 vec![full_node_host
@@ -170,12 +204,23 @@ impl TryFrom<ValidatorConfiguration> for Validator {
             )));
         }
 
+        let consensus_pubkey = if let Some(consensus_public_key) = config.consensus_public_key {
+            consensus_public_key.to_bytes().to_vec()
+        } else {
+            vec![]
+        };
+        let proof_of_possession = if let Some(pop) = config.proof_of_possession {
+            pop.to_bytes().to_vec()
+        } else {
+            vec![]
+        };
+
         Ok(Validator {
             owner_address: config.owner_account_address,
             operator_address: config.operator_account_address,
             voter_address: config.voter_account_address,
-            consensus_pubkey: config.consensus_public_key.to_bytes().to_vec(),
-            proof_of_possession: config.proof_of_possession.to_bytes().to_vec(),
+            consensus_pubkey,
+            proof_of_possession,
             network_addresses: bcs::to_bytes(&validator_addresses).unwrap(),
             full_node_network_addresses: bcs::to_bytes(&full_node_addresses).unwrap(),
             stake_amount: config.stake_amount,
@@ -259,6 +304,8 @@ pub struct OwnerConfiguration {
     pub operator_account_address: AccountAddress,
     pub operator_account_public_key: Ed25519PublicKey,
     pub stake_amount: u64,
+    pub commission_percentage: u64,
+    pub join_during_genesis: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -282,6 +329,8 @@ pub struct StringOwnerConfiguration {
     pub operator_account_address: Option<String>,
     pub operator_account_public_key: Option<String>,
     pub stake_amount: Option<String>,
+    pub commission_percentage: Option<String>,
+    pub join_during_genesis: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

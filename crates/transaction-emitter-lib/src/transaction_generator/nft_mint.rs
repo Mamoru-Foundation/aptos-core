@@ -10,7 +10,7 @@ use aptos_sdk::{
 use crate::emitter::{account_minter::create_and_fund_account_request, RETRY_POLICY};
 use aptos_logger::{info, warn};
 use rand::rngs::StdRng;
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 pub struct NFTMint {
     txn_factory: TransactionFactory,
@@ -66,7 +66,14 @@ async fn submit_retry_and_wait(rest_client: &RestClient, txn: &SignedTransaction
     }
     // if submission timeouts, it might still get committed:
     RETRY_POLICY
-        .retry(move || rest_client.wait_for_signed_transaction_bcs(txn))
+        .retry(move || {
+            rest_client.wait_for_transaction_by_hash_bcs(
+                txn.clone().committed_hash(),
+                txn.expiration_timestamp_secs(),
+                Some(Duration::from_secs(120)),
+                None,
+            )
+        })
         .await
         .unwrap();
 }
@@ -79,6 +86,26 @@ pub async fn initialize_nft_collection(
     collection_name: &[u8],
     token_name: &[u8],
 ) {
+    // resync root account sequence number
+    match rest_client.get_account(root_account.address()).await {
+        Ok(result) => {
+            let account = result.into_inner();
+            if root_account.sequence_number() < account.sequence_number {
+                warn!(
+                    "Root account sequence number got out of sync: remotely {}, locally {}",
+                    account.sequence_number,
+                    root_account.sequence_number_mut()
+                );
+                *root_account.sequence_number_mut() = account.sequence_number;
+            }
+        }
+        Err(e) => warn!(
+            "[{}] Couldn't check account sequence number due to {:?}",
+            rest_client.path_prefix_string(),
+            e
+        ),
+    }
+
     // Create and mint the owner account first
     let create_account_txn = create_and_fund_account_request(
         root_account,
