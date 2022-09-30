@@ -182,31 +182,42 @@ serde-reflection = { git = "https://github.com/aptos-labs/serde-reflection", rev
 
 # Replacing original dependences of "move-language/move"
 [patch."https://github.com/move-language/move"]
-move-abigen = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-binary-format = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-bytecode-utils = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-bytecode-verifier = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-cli = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-command-line-common = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-compiler = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-core-types = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-docgen = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-errmapgen = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-ir-compiler = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-model = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-package = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-prover = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-prover-boogie-backend = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-prover-test-utils = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-resource-viewer = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-stackless-bytecode-interpreter = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-stdlib = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-symbol-pool = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-table-extension = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-transactional-test-runner = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-unit-test = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-vm-runtime = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-vm-test-utils = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-vm-types = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-read-write-set = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-read-write-set-dynamic = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
+move-abigen = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-binary-format = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-bytecode-utils = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-bytecode-verifier = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-bytecode-source-map = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-cli = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-command-line-common = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-compiler = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-coverage = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-core-types = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-disassembler = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-docgen = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-errmapgen = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-ir-compiler = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-model = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-package = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-prover = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-prover-boogie-backend = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-prover-test-utils = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-resource-viewer = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-stackless-bytecode-interpreter = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-ir-to-bytecode = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-ir-to-bytecode-syntax = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-ir-types = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-stdlib = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-symbol-pool = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-table-extension = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-transactional-test-runner = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-unit-test = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-vm-runtime = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-vm-test-utils = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-vm-types = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+read-write-set = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+read-write-set-dynamic = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+
+
+[patch."https://github.com/aptos-labs/move"]
+move-command-line-common = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }
+move-package = { git = "https://github.com/Mamoru-Foundation/move", branch = "feat/mamoru-35-update-fork" }

@@ -44,8 +44,6 @@ use aptos_types::{
 };
 use fail::fail_point;
 use framework::natives::code::PublishRequest;
-use move_deps::move_binary_format::errors::VMError;
-use move_deps::move_core_types::language_storage::ModuleId;
 use move_deps::move_core_types::trace::CallTrace;
 use move_deps::move_vm_runtime::session::SerializedReturnValues;
 use move_deps::{
