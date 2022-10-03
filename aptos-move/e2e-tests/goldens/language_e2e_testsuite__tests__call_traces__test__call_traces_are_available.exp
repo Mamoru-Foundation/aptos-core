@@ -16,7 +16,7 @@ Ok(
                 ),
             ),
             events: [],
-            gas_used: 26,
+            gas_used: 517,
             status: Keep(
                 Success,
             ),
@@ -42,7 +42,7 @@ Ok(
                 ),
             ),
             events: [],
-            gas_used: 10,
+            gas_used: 253,
             status: Keep(
                 Success,
             ),
@@ -55,7 +55,7 @@ Ok(
                     ty_args: [],
                     args_types: [],
                     args_values: [],
-                    gas_used: 2,
+                    gas_used: 120,
                     err: None,
                 },
                 CallTrace {
@@ -127,7 +127,7 @@ Ok(
                             0,
                         ],
                     ],
-                    gas_used: 22,
+                    gas_used: 10880,
                     err: None,
                 },
                 CallTrace {
@@ -197,7 +197,7 @@ Ok(
                             0,
                         ],
                     ],
-                    gas_used: 23,
+                    gas_used: 10940,
                     err: None,
                 },
             ],
