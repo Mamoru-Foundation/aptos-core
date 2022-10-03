@@ -217,7 +217,6 @@ move-vm-types = { git = "https://github.com/Mamoru-Foundation/move", branch = "m
 read-write-set = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
 read-write-set-dynamic = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
 
-
 [patch."https://github.com/aptos-labs/move"]
 move-command-line-common = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
 move-package = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
