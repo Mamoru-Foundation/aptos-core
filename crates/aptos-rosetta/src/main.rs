@@ -3,11 +3,15 @@
 
 #![forbid(unsafe_code)]
 
-use aptos_config::config::ApiConfig;
+use aptos_config::config::{ApiConfig, DEFAULT_MAX_PAGE_SIZE};
+use aptos_logger::prelude::*;
 use aptos_node::AptosNodeArgs;
 use aptos_rosetta::bootstrap;
+use aptos_sdk::move_types::account_address::AccountAddress;
 use aptos_types::chain_id::ChainId;
 use clap::Parser;
+use std::fs::read_to_string;
+use std::path::PathBuf;
 use std::{
     net::SocketAddr,
     sync::{
@@ -19,8 +23,10 @@ use std::{
 };
 use tokio::time::Instant;
 
-const REST_API_WAIT_DURATION_MS: u64 = 100;
-const TOTAL_REST_API_WAIT_DURATION_S: u64 = 60;
+/// Poll every 100 ms
+const DEFAULT_REST_API_WAIT_INTERVAL_MS: u64 = 100;
+/// Log failures every 10 seconds
+const LOG_INTERVAL_MS: u64 = 10_000;
 
 #[tokio::main]
 async fn main() {
@@ -48,24 +54,25 @@ async fn main() {
 
         // Wait and ensure the node is running on the URL
         let client = aptos_rest_client::Client::new(online_args.rest_api_url.clone());
-        let mut successful = false;
-        let total_wait_duration = Duration::from_secs(TOTAL_REST_API_WAIT_DURATION_S);
         let start = Instant::now();
-        while start.elapsed() < total_wait_duration {
-            if client.get_index_bcs().await.is_ok() {
-                successful = true;
-                break;
+        loop {
+            match client.get_index_bcs().await {
+                Ok(_) => {
+                    break;
+                }
+                Err(err) => {
+                    sample!(
+                        SampleRate::Duration(Duration::from_millis(LOG_INTERVAL_MS)),
+                        println!(
+                            "aptos-rosetta: Full node REST API isn't responding yet.  You should check the node logs.  It's been waiting {} seconds.  Error: {:?}",
+                            start.elapsed().as_secs(),
+                            err
+                        )
+                    );
+                    tokio::time::sleep(Duration::from_millis(DEFAULT_REST_API_WAIT_INTERVAL_MS))
+                        .await;
+                }
             }
-
-            tokio::time::sleep(Duration::from_millis(REST_API_WAIT_DURATION_MS)).await;
-        }
-
-        // If it didn't start up, we need to crash
-        if !successful {
-            panic!(
-                "aptos-rosetta: Local full node didn't start up on time after {} seconds at {}",
-                TOTAL_REST_API_WAIT_DURATION_S, online_args.rest_api_url
-            )
         }
 
         println!("aptos-rosetta: Local full node started successfully");
@@ -82,7 +89,7 @@ async fn main() {
         args.chain_id(),
         args.api_config(),
         args.rest_client(),
-        args.synthetic_block_size(),
+        args.owner_addresses(),
     )
     .expect("aptos-rosetta: Should bootstrap rosetta server");
 
@@ -105,8 +112,8 @@ trait ServerArgs {
     /// Retrieve the chain id
     fn chain_id(&self) -> ChainId;
 
-    /// Retrieve the block size
-    fn synthetic_block_size(&self) -> Option<u16>;
+    /// Retrieve owner addresses
+    fn owner_addresses(&self) -> Vec<AccountAddress>;
 }
 
 /// Aptos Rosetta API Server
@@ -148,11 +155,11 @@ impl ServerArgs for CommandArgs {
         }
     }
 
-    fn synthetic_block_size(&self) -> Option<u16> {
+    fn owner_addresses(&self) -> Vec<AccountAddress> {
         match self {
-            CommandArgs::OnlineRemote(args) => args.synthetic_block_size(),
-            CommandArgs::Offline(args) => args.synthetic_block_size(),
-            CommandArgs::Online(args) => args.synthetic_block_size(),
+            CommandArgs::OnlineRemote(args) => args.owner_addresses(),
+            CommandArgs::Offline(args) => args.owner_addresses(),
+            CommandArgs::Online(args) => args.owner_addresses(),
         }
     }
 }
@@ -174,6 +181,11 @@ pub struct OfflineArgs {
     /// ChainId to be used for the server e.g. TESTNET
     #[clap(long, default_value = "TESTING")]
     chain_id: ChainId,
+    /// Page size for transactions APIs, must match the downstream node
+    ///
+    /// This can be configured to change performance characteristics
+    #[clap(long, default_value_t = DEFAULT_MAX_PAGE_SIZE)]
+    transactions_page_size: u16,
 }
 
 impl ServerArgs for OfflineArgs {
@@ -184,6 +196,7 @@ impl ServerArgs for OfflineArgs {
             tls_cert_path: self.tls_cert_path.clone(),
             tls_key_path: self.tls_key_path.clone(),
             content_length_limit: self.content_length_limit,
+            max_transactions_page_size: self.transactions_page_size,
             ..Default::default()
         }
     }
@@ -196,8 +209,8 @@ impl ServerArgs for OfflineArgs {
         self.chain_id
     }
 
-    fn synthetic_block_size(&self) -> Option<u16> {
-        None
+    fn owner_addresses(&self) -> Vec<AccountAddress> {
+        vec![]
     }
 }
 
@@ -208,12 +221,9 @@ pub struct OnlineRemoteArgs {
     /// URL for the Aptos REST API. e.g. https://fullnode.devnet.aptoslabs.com
     #[clap(long, default_value = "http://localhost:8080")]
     rest_api_url: url::Url,
-
-    /// In the event that block size is not provided, it will use the actual blocks
-    /// if block size is provided, it will make synthetic blocks based on the transaction
-    /// versions.  Each block will be `synthetic_block_size` transaction versions
-    #[clap(long)]
-    pub synthetic_block_size: Option<u16>,
+    /// Owner addresses file as a YAML file with a list
+    #[clap(long, parse(from_os_str))]
+    owner_address_file: Option<PathBuf>,
 }
 
 impl ServerArgs for OnlineRemoteArgs {
@@ -229,8 +239,15 @@ impl ServerArgs for OnlineRemoteArgs {
         self.offline_args.chain_id
     }
 
-    fn synthetic_block_size(&self) -> Option<u16> {
-        self.synthetic_block_size
+    fn owner_addresses(&self) -> Vec<AccountAddress> {
+        if let Some(ref path) = self.owner_address_file {
+            serde_yaml::from_str(
+                &read_to_string(path.as_path()).expect("Failed to read owner address file"),
+            )
+            .expect("Owner address file is in an invalid format")
+        } else {
+            vec![]
+        }
     }
 }
 
@@ -257,7 +274,7 @@ impl ServerArgs for OnlineLocalArgs {
         self.online_args.offline_args.chain_id
     }
 
-    fn synthetic_block_size(&self) -> Option<u16> {
-        self.online_args.synthetic_block_size
+    fn owner_addresses(&self) -> Vec<AccountAddress> {
+        self.online_args.owner_addresses()
     }
 }

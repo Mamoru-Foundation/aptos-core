@@ -23,6 +23,7 @@ members = [
     "aptos-move/move-deps",
     "aptos-move/move-examples",
     "aptos-move/mvhashmap",
+    "aptos-move/package-builder",
     "aptos-move/parallel-executor",
     "aptos-move/vm-genesis",
     "aptos-move/writeset-transaction-generator",
@@ -74,8 +75,6 @@ members = [
     "crates/transaction-emitter-lib",
     "ecosystem/node-checker",
     "ecosystem/node-checker/fn-check-client",
-    "ecosystem/sf-indexer/aptos-sf-indexer",
-    "ecosystem/sf-indexer/firehose-stream",
     "execution/db-bootstrapper",
     "execution/executor",
     "execution/executor-benchmark",
@@ -128,10 +127,7 @@ members = [
     "vm-validator",
 ]
 
-exclude =[
-    "crates/aptos-protos",
-    "ecosystem/sf-indexer/aptos-substreams",
-]
+exclude = ["crates/aptos-protos", "ecosystem/sf-indexer"]
 
 # NOTE: default-members is the complete list of binaries that form the "production Aptos codebase". These members should
 # never include crates that require fuzzing features or test features. These are the crates we want built with no extra
@@ -183,35 +179,44 @@ debug = true
 [patch.crates-io]
 rocksdb = { git = 'https://github.com/aptos-labs/rust-rocksdb' }
 serde-reflection = { git = "https://github.com/aptos-labs/serde-reflection", rev = "839aed62a20ddccf043c08961cfe74875741ccba" }
-diesel = { git = "https://github.com/aptos-labs/diesel", branch = "1.4.x" }
 
 # Replacing original dependences of "move-language/move"
 [patch."https://github.com/move-language/move"]
-move-abigen = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-binary-format = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-bytecode-utils = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-bytecode-verifier = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-cli = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-command-line-common = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-compiler = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-core-types = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-docgen = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-errmapgen = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-ir-compiler = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-model = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-package = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-prover = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-prover-boogie-backend = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-prover-test-utils = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-resource-viewer = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-stackless-bytecode-interpreter = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-stdlib = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-symbol-pool = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-table-extension = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-transactional-test-runner = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-unit-test = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-vm-runtime = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-vm-test-utils = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-move-vm-types = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-read-write-set = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
-read-write-set-dynamic = { git = "https://github.com/bobchainer/move", rev = "c73b6b22" }
+move-abigen = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-binary-format = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-bytecode-utils = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-bytecode-verifier = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-bytecode-source-map = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-cli = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-command-line-common = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-compiler = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-coverage = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-core-types = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-disassembler = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-docgen = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-errmapgen = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-ir-compiler = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-model = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-package = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-prover = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-prover-boogie-backend = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-prover-test-utils = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-resource-viewer = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-stackless-bytecode-interpreter = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-ir-to-bytecode = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-ir-to-bytecode-syntax = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-ir-types = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-stdlib = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-symbol-pool = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-table-extension = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-transactional-test-runner = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-unit-test = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-vm-runtime = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-vm-test-utils = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-vm-types = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+read-write-set = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+read-write-set-dynamic = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+
+[patch."https://github.com/aptos-labs/move"]
+move-command-line-common = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }
+move-package = { git = "https://github.com/Mamoru-Foundation/move", branch = "main" }

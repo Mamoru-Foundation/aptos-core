@@ -3,7 +3,8 @@
 
 use anyhow::Result;
 use aptos_config::config::{
-    DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD, NO_OP_STORAGE_PRUNER_CONFIG, TARGET_SNAPSHOT_SIZE,
+    BUFFERED_STATE_TARGET_ITEMS, DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
+    NO_OP_STORAGE_PRUNER_CONFIG,
 };
 use aptos_logger::{prelude::*, Level, Logger};
 use aptos_types::transaction::Version;
@@ -33,13 +34,13 @@ struct Opt {
     pub rocksdb_opt: RocksdbOpt,
     #[clap(
         long,
-        help = "[Defaults to 0] The first transaction version required to be replayed and verified."
+        help = "The first transaction version required to be replayed and verified. [Defaults to 0]"
     )]
     start_version: Option<Version>,
     #[clap(
         long,
-        help = "[Defaults to the latest version available] The last transaction version required \
-                to be replayed and verified (if present in the backup)."
+        help = "The last transaction version required to be replayed and verified (if present \
+        in the backup). [Defaults to the latest version available] "
     )]
     end_version: Option<Version>,
 }
@@ -62,7 +63,7 @@ async fn main_impl() -> Result<()> {
         NO_OP_STORAGE_PRUNER_CONFIG, /* pruner config */
         opt.rocksdb_opt.into(),
         false,
-        TARGET_SNAPSHOT_SIZE,
+        BUFFERED_STATE_TARGET_ITEMS,
         DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
     )?)
     .get_restore_handler();

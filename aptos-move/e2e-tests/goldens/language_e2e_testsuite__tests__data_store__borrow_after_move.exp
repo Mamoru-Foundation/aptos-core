@@ -16,7 +16,7 @@ Ok(
                 ),
             ),
             events: [],
-            gas_used: 40,
+            gas_used: 656,
             status: Keep(
                 Success,
             ),
@@ -39,7 +39,7 @@ Ok(
                 ),
             ),
             events: [],
-            gas_used: 1,
+            gas_used: 152,
             status: Keep(
                 ExecutionFailure {
                     location: f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1::M,
@@ -69,7 +69,7 @@ Ok(
                 ),
             ),
             events: [],
-            gas_used: 9,
+            gas_used: 249,
             status: Keep(
                 Success,
             ),
@@ -82,7 +82,7 @@ Ok(
                     ty_args: [],
                     args_types: [],
                     args_values: [],
-                    gas_used: 1,
+                    gas_used: 60,
                     err: None,
                 },
                 CallTrace {
@@ -139,7 +139,7 @@ Ok(
                             225,
                         ],
                     ],
-                    gas_used: 20,
+                    gas_used: 10660,
                     err: None,
                 },
                 CallTrace {
@@ -194,7 +194,7 @@ Ok(
                             225,
                         ],
                     ],
-                    gas_used: 21,
+                    gas_used: 10720,
                     err: None,
                 },
             ],
@@ -216,7 +216,7 @@ Ok(
                 ),
             ),
             events: [],
-            gas_used: 1,
+            gas_used: 153,
             status: Keep(
                 Success,
             ),
@@ -229,7 +229,7 @@ Ok(
                     ty_args: [],
                     args_types: [],
                     args_values: [],
-                    gas_used: 1,
+                    gas_used: 60,
                     err: None,
                 },
                 CallTrace {
@@ -286,7 +286,7 @@ Ok(
                             225,
                         ],
                     ],
-                    gas_used: 4,
+                    gas_used: 1780,
                     err: None,
                 },
                 CallTrace {
@@ -343,7 +343,7 @@ Ok(
                             225,
                         ],
                     ],
-                    gas_used: 7,
+                    gas_used: 3500,
                     err: None,
                 },
                 CallTrace {
@@ -400,7 +400,7 @@ Ok(
                             225,
                         ],
                     ],
-                    gas_used: 44,
+                    gas_used: 5688,
                     err: None,
                 },
                 CallTrace {
@@ -457,7 +457,7 @@ Ok(
                             225,
                         ],
                     ],
-                    gas_used: 65,
+                    gas_used: 22368,
                     err: None,
                 },
                 CallTrace {
@@ -512,7 +512,7 @@ Ok(
                             225,
                         ],
                     ],
-                    gas_used: 66,
+                    gas_used: 22428,
                     err: None,
                 },
             ],
@@ -537,7 +537,7 @@ Ok(
                 ),
             ),
             events: [],
-            gas_used: 9,
+            gas_used: 153,
             status: Keep(
                 Success,
             ),
@@ -550,7 +550,7 @@ Ok(
                     ty_args: [],
                     args_types: [],
                     args_values: [],
-                    gas_used: 1,
+                    gas_used: 60,
                     err: None,
                 },
                 CallTrace {
@@ -607,7 +607,7 @@ Ok(
                             225,
                         ],
                     ],
-                    gas_used: 4,
+                    gas_used: 1780,
                     err: None,
                 },
                 CallTrace {
@@ -664,7 +664,7 @@ Ok(
                             225,
                         ],
                     ],
-                    gas_used: 7,
+                    gas_used: 3500,
                     err: None,
                 },
                 CallTrace {
@@ -721,7 +721,7 @@ Ok(
                             225,
                         ],
                     ],
-                    gas_used: 44,
+                    gas_used: 5688,
                     err: None,
                 },
                 CallTrace {
@@ -778,7 +778,7 @@ Ok(
                             225,
                         ],
                     ],
-                    gas_used: 67,
+                    gas_used: 22478,
                     err: None,
                 },
                 CallTrace {
@@ -833,7 +833,7 @@ Ok(
                             225,
                         ],
                     ],
-                    gas_used: 68,
+                    gas_used: 22538,
                     err: None,
                 },
             ],
@@ -851,7 +851,7 @@ Ok(
                 ),
             ),
             events: [],
-            gas_used: 1,
+            gas_used: 152,
             status: Keep(
                 ExecutionFailure {
                     location: f5b9d6f01a99e74c790e2f330c092fa05455a8193f1dfc1b113ecc54d067afe1::M,

@@ -33,8 +33,6 @@ async fn test_create_mint_transfer_block_metadata() {
     );
 }
 
-// TODO: flaky, disabling until fixed.
-#[ignore]
 #[tokio::test]
 async fn test_basic_fault_tolerance() {
     // A configuration with 4 validators should tolerate single node failure.
@@ -113,7 +111,7 @@ async fn test_latest_events_and_transactions() {
     let mut swarm = new_local_swarm_with_aptos(1).await;
     let client = swarm.validators().next().unwrap().rest_client();
     let start_events = client
-        .get_new_block_events(None, Some(2))
+        .get_new_block_events_bcs(None, Some(2))
         .await
         .unwrap()
         .into_inner();
@@ -125,7 +123,7 @@ async fn test_latest_events_and_transactions() {
 
     create_and_fund_account(&mut swarm, 100).await;
     let cur_events = client
-        .get_new_block_events(None, Some(2))
+        .get_new_block_events_bcs(None, Some(2))
         .await
         .unwrap()
         .into_inner();
