@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   rust-lint:
-    runs-on: furuensu
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/rust-setup
@@ -27,7 +27,7 @@ jobs:
       - run: scripts/rust_lint.sh --check
 
   rust-doc-test:
-    runs-on: furuensu
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
         with:
@@ -36,7 +36,7 @@ jobs:
       - run: cargo test --doc --workspace --exclude aptos-node-checker
 
   rust-unit-test:
-    runs-on: furuensu
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
         with:
@@ -48,7 +48,7 @@ jobs:
       - run: cargo nextest run --profile ci --workspace --exclude smoke-test --exclude backup-cli --exclude testcases --exclude forge --retries 3 --no-fail-fast
 
   rust-smoke-test:
-    runs-on: furuensu
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/rust-setup
