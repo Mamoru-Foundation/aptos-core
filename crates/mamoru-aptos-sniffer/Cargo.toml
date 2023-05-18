@@ -14,8 +14,8 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
-mamoru-aptos-types = { git = "https://github.com/Mamoru-Foundation/mamoru-core", rev = "962d8e92c8f2765f9cec9542400caa93221f23e6" }
+mamoru-aptos-types = { git = "https://github.com/Mamoru-Foundation/mamoru-core", rev = "0839078ec5b84e682beed292426c0b0a7f017fbb" }
 #mamoru-aptos-types = { path = "../../../mamoru-core/mamoru-aptos-types" }
 
-mamoru-sniffer = { git = "https://github.com/Mamoru-Foundation/mamoru-core", rev = "962d8e92c8f2765f9cec9542400caa93221f23e6" }
+mamoru-sniffer = { git = "https://github.com/Mamoru-Foundation/mamoru-core", rev = "0839078ec5b84e682beed292426c0b0a7f017fbb" }
 #mamoru-sniffer = { path = "../../../mamoru-core/mamoru-sniffer" }

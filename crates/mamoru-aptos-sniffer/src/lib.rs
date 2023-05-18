@@ -53,7 +53,10 @@ impl AptosSniffer {
         };
 
         let block_hash = block_info.id().to_hex_literal();
+        let block_id = format!("{}", block_info.version());
         let mut builder = BlockchainDataBuilder::<AptosCtx>::new();
+
+        builder.set_block_data(block_id, block_hash.clone());
 
         builder.data_mut().set_block(Block {
             hash: block_hash.clone(),
@@ -118,7 +121,7 @@ impl AptosSniffer {
             .extend(call_trace_type_args);
         builder.data_mut().events.extend(events);
 
-        let ctx = builder.build(block_hash.clone(), block_hash)?;
+        let ctx = builder.build()?;
 
         self.inner.observe_data(ctx).await;
 
